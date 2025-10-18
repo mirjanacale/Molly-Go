@@ -16,14 +16,29 @@
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 8px 25px rgba(242, 169, 8, 0.3);
-  z-index: 1000;
+  z-index: 10000;
   transition: all 0.3s ease;
   font-family: "Poppins", sans-serif;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .chatbot-toggle:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 35px rgba(242, 169, 8, 0.4);
+}
+
+.chatbot-toggle:focus {
+  outline: 3px solid rgba(242, 169, 8, 0.5);
+  outline-offset: 2px;
+}
+
+.chatbot-toggle:active {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(242, 169, 8, 0.5);
 }
 
 /*.chatbot-panel {
@@ -1003,13 +1018,6 @@ button {
   .chatbot-input button {
     padding: 10px 14px;
     font-size: 13px;
-  }
-
-  .chatbot-toggle {
-    bottom: 20px;
-    right: 20px;
-    padding: 10px 18px;
-    font-size: 14px;
   }
 }
 
