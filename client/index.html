@@ -16,20 +16,20 @@
   <body>
     <!-- ChatBot Toggle Button -->
     <button
-      id="chatbot-toggle"
+      id="mollychat-toggle"
       class="chatbot-toggle"
-      onclick="toggleChatBot()"
+      onclick="toggleMollyChat()"
     >
       💬 Chat with MOLLY
     </button>
 
     <!-- ChatBot Panel -->
-    <div id="chatbot-panel" class="chatbot-panel">
+    <div id="mollychat-panel" class="chatbot-panel">
       <div class="chatbot-header">
         <h3>💬 MOLLY Travel Buddy</h3>
-        <button class="chatbot-close" onclick="toggleChatBot()">×</button>
+        <button class="chatbot-close" onclick="toggleMollyChat()">×</button>
       </div>
-      <div id="chatbot-messages" class="chatbot-messages">
+      <div id="mollychat-messages" class="chatbot-messages">
         <div class="message assistant">
           <div class="message-content">
             Hi there! 🌍 I'm MOLLY, your cheerful travel buddy! How are you
@@ -40,11 +40,11 @@
       <div class="chatbot-input">
         <input
           type="text"
-          id="chatbot-input-field"
+          id="mollychat-input-field"
           placeholder="Tell me about your travel dreams..."
           onkeypress="handleChatInputKeypress(event)"
         />
-        <button onclick="sendChatMessage()">Send</button>
+        <button onclick="sendMollyMessage()">Send</button>
       </div>
     </div>
 
@@ -326,8 +326,10 @@
       <div id="pe"></div>
     </div>
 
-    <script src="app.js"></script>
-    <script src="ai-features.js"></script>
+    <!-- Optimized: Defer non-critical scripts for better initial page load performance -->
+    <script src="app.js" defer></script>
+    <script src="ai-features.js" defer></script>
+    <!-- Critical: chatbot.js loads last to ensure functions are available for onclick handlers -->
     <script src="chatbot.js"></script>
   </body>
 </html>

@@ -26,23 +26,62 @@
   box-shadow: 0 12px 35px rgba(242, 169, 8, 0.4);
 }
 
-.chatbot-panel {
+/*.chatbot-panel {
   position: fixed;
-  top: 0;
-  left: -400px;
+  bottom: 0;
+  left: 0;
   width: 400px;
-  height: 100vh;
+  height: 80vh;
   background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-  border-right: 3px solid #f2a908;
-  box-shadow: 5px 0 25px rgba(0, 0, 0, 0.1);
-  transition: left 0.3s ease;
-  z-index: 1001;
+  border-top: 3px solid #f2a908;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(120%);
+  opacity: 0;
+  transition: all 0.35s ease;
+  z-index: 99999;
   display: flex;
   flex-direction: column;
 }
 
 .chatbot-panel.open {
-  left: 0;
+  transform: translateY(0);
+  opacity: 1;
+}*/
+/* ✅ Updated MOLLY Chat Panel - slides up from bottom-right */
+.chatbot-panel {
+  position: fixed;
+  bottom: 100px;
+  right: 30px;
+  width: 380px;
+  height: 500px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(120%);
+  opacity: 0;
+  transition: all 0.35s ease;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid rgba(242, 169, 8, 0.3);
+}
+
+.chatbot-panel.open {
+  transform: translateY(0);
+  opacity: 1;
+  animation: popUp 0.4s ease-out;
+}
+
+@keyframes popUp {
+  0% {
+    transform: translateY(120%) scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 .chatbot-header {
@@ -53,6 +92,8 @@
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .chatbot-header h3 {
@@ -63,23 +104,28 @@
 }
 
 .chatbot-close {
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
-  font-size: 24px;
+  font-size: 20px;
+  font-weight: bold;
   cursor: pointer;
-  padding: 5px;
+  padding: 8px;
   border-radius: 50%;
-  width: 35px;
-  height: 35px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .chatbot-close:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .chatbot-messages {
@@ -170,7 +216,9 @@
 @media (max-width: 768px) {
   .chatbot-panel {
     width: 100vw;
-    left: -100vw;
+    height: 90vh;
+    left: 0;
+    border-radius: 15px 15px 0 0;
   }
 
   .chatbot-toggle {
@@ -918,4 +966,71 @@ button {
 
 .price-btn:hover {
   background-color: #0056b3;
+}
+/* 🌍 Responsive MOLLY Chat Panel - mobile optimization */
+@media (max-width: 768px) {
+  .chatbot-panel {
+    width: 90vw;
+    height: 80vh;
+    right: 5vw;
+    bottom: 80px;
+    border-radius: 20px;
+    transform: translateY(120%);
+    opacity: 0;
+  }
+
+  .chatbot-panel.open {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .chatbot-header {
+    font-size: 16px;
+    padding: 14px;
+  }
+
+  .chatbot-input {
+    padding: 12px;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .chatbot-input input {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+
+  .chatbot-input button {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .chatbot-toggle {
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 18px;
+    font-size: 14px;
+  }
+}
+
+/* 🧡 Tiny-screen fallback (for very small phones) */
+@media (max-width: 480px) {
+  .chatbot-panel {
+    width: 100vw;
+    height: 90vh;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    border-radius: 15px 15px 0 0;
+  }
+
+  .chatbot-header h3 {
+    font-size: 15px;
+  }
+
+  .chatbot-toggle {
+    bottom: 15px;
+    right: 15px;
+    padding: 9px 16px;
+  }
 }

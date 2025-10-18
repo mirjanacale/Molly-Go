@@ -1,3 +1,6 @@
+// ✅ CRITICAL: Initialize dotenv FIRST before accessing any environment variables
+require("dotenv").config();
+
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
@@ -5,7 +8,6 @@ const liteApi = require("liteapi-node-sdk");
 const cors = require("cors");
 const path = require("path");
 const OpenAI = require("openai");
-require("dotenv").config();
 
 // Initialize OpenAI with error handling
 let openai = null;
@@ -33,8 +35,44 @@ app.use(
   })
 );
 
+// ✅ Enhanced environment variable loading with validation and logging
 const prod_apiKey = process.env.PROD_API_KEY;
 const sandbox_apiKey = process.env.SAND_API_KEY;
+
+// ✅ Environment validation and logging for better debugging
+console.log("🔧 Environment Variable Status:");
+console.log(
+  `  📊 OpenAI API Key: ${
+    process.env.OPENAI_API_KEY ? "✅ Found" : "❌ Missing"
+  }`
+);
+console.log(
+  `  🏨 LiteAPI Production Key: ${prod_apiKey ? "✅ Found" : "❌ Missing"}`
+);
+console.log(
+  `  🧪 LiteAPI Sandbox Key: ${sandbox_apiKey ? "✅ Found" : "❌ Missing"}`
+);
+
+// ✅ Validate API keys and warn about missing ones
+if (!prod_apiKey || prod_apiKey === "your_production_api_key_here") {
+  console.warn(
+    "⚠️ LiteAPI production key missing! Hotel bookings will use mock data in production mode."
+  );
+}
+
+if (!sandbox_apiKey || sandbox_apiKey === "your_sandbox_api_key_here") {
+  console.warn(
+    "⚠️ LiteAPI sandbox key missing! Hotel bookings will use mock data in sandbox mode."
+  );
+}
+
+// ✅ Determine current mode based on available keys
+const hasValidKeys =
+  (prod_apiKey && prod_apiKey !== "your_production_api_key_here") ||
+  (sandbox_apiKey && sandbox_apiKey !== "your_sandbox_api_key_here");
+console.log(
+  `  🎯 Mode: ${hasValidKeys ? "✅ Live API Mode" : "🎭 Demo Mode (Mock Data)"}`
+);
 
 app.use(bodyParser.json());
 
@@ -900,8 +938,9 @@ app.get("/search-hotels", async (req, res) => {
   const { checkin, checkout, adults, city, countryCode, environment } =
     req.query;
 
-  // Check if we have real API keys
+  // ✅ Enhanced API key validation with environment-specific logging
   const apiKey = environment == "sandbox" ? sandbox_apiKey : prod_apiKey;
+  const environmentType = environment == "sandbox" ? "Sandbox" : "Production";
 
   if (
     !apiKey ||
@@ -909,7 +948,7 @@ app.get("/search-hotels", async (req, res) => {
     apiKey === "your_sandbox_api_key_here"
   ) {
     console.log(
-      "🔧 Using mock hotel data - add your LiteAPI keys to .env for real results"
+      `🔧 Using mock hotel data for ${environmentType} mode - add your LiteAPI ${environmentType.toLowerCase()} key to .env for real results`
     );
 
     // Return mock data with a delay to simulate API call
@@ -953,7 +992,25 @@ app.get("/search-hotels", async (req, res) => {
 app.get("/search-rates", async (req, res) => {
   console.log("Rate endpoint hit");
   const { checkin, checkout, adults, hotelId, environment } = req.query;
+
+  // ✅ Enhanced API key validation for rates endpoint
   const apiKey = environment === "sandbox" ? sandbox_apiKey : prod_apiKey;
+  const environmentType = environment === "sandbox" ? "Sandbox" : "Production";
+
+  if (
+    !apiKey ||
+    apiKey === "your_production_api_key_here" ||
+    apiKey === "your_sandbox_api_key_here"
+  ) {
+    console.log(
+      `🔧 LiteAPI ${environmentType} key missing for rates endpoint - using fallback`
+    );
+    return res.status(503).json({
+      error: `LiteAPI ${environmentType.toLowerCase()} key not configured`,
+      message: "Please add your LiteAPI key to .env file",
+    });
+  }
+
   const sdk = liteApi(apiKey);
 
   try {
@@ -1029,7 +1086,25 @@ app.get("/search-rates", async (req, res) => {
 app.post("/prebook", async (req, res) => {
   //console.log(req.body);
   const { rateId, environment, voucherCode } = req.body;
+
+  // ✅ Enhanced API key validation for prebook endpoint
   const apiKey = environment === "sandbox" ? sandbox_apiKey : prod_apiKey;
+  const environmentType = environment === "sandbox" ? "Sandbox" : "Production";
+
+  if (
+    !apiKey ||
+    apiKey === "your_production_api_key_here" ||
+    apiKey === "your_sandbox_api_key_here"
+  ) {
+    console.log(
+      `🔧 LiteAPI ${environmentType} key missing for prebook endpoint`
+    );
+    return res.status(503).json({
+      error: `LiteAPI ${environmentType.toLowerCase()} key not configured`,
+      message: "Please add your LiteAPI key to .env file",
+    });
+  }
+
   const sdk = liteApi(apiKey);
   //console.log(apiKey, "apiKey");
   const bodyData = {
@@ -1070,7 +1145,25 @@ app.get("/book", (req, res) => {
     environment,
   } = req.query;
 
+  // ✅ Enhanced API key validation for booking endpoint
   const apiKey = environment === "sandbox" ? sandbox_apiKey : prod_apiKey;
+  const environmentType = environment === "sandbox" ? "Sandbox" : "Production";
+
+  if (
+    !apiKey ||
+    apiKey === "your_production_api_key_here" ||
+    apiKey === "your_sandbox_api_key_here"
+  ) {
+    console.log(
+      `🔧 LiteAPI ${environmentType} key missing for booking endpoint`
+    );
+    return res
+      .status(503)
+      .send(
+        `LiteAPI ${environmentType.toLowerCase()} key not configured. Please add your LiteAPI key to .env file.`
+      );
+  }
+
   const sdk = liteApi(apiKey);
 
   // Prepare the booking data
@@ -1200,10 +1293,42 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/index.html"));
 });
 
+// ✅ Enhanced API configuration endpoint with proper fallback logic
+app.get("/api/config", (req, res) => {
+  // Use sandbox key as primary, fallback to production key, then demo key
+  const primaryKey = sandbox_apiKey || prod_apiKey || "sand_f3a10xxxxxxxxxxxxx";
+  const keySource = sandbox_apiKey
+    ? "sandbox"
+    : prod_apiKey
+    ? "production"
+    : "demo";
+
+  console.log(`🔧 Serving API config with ${keySource} key`);
+
+  res.json({
+    LITEAPI_KEY: primaryKey,
+    LITEAPI_URL: "https://api.liteapi.travel/v3.0",
+    KEY_SOURCE: keySource, // For debugging purposes
+    IS_DEMO: keySource === "demo",
+  });
+});
+
 app.use(express.static(path.join(__dirname, "../client")));
 
 const port = 3000;
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`🚀 Server is running on port ${port}`);
+  console.log(
+    `📊 OpenAI Integration: ${openai ? "✅ Active" : "❌ Disabled (Mock Mode)"}`
+  );
+  console.log(
+    `🏨 LiteAPI Integration: ${
+      hasValidKeys ? "✅ Active" : "❌ Disabled (Mock Mode)"
+    }`
+  );
+  console.log(`🌐 Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(
+    `📁 Static files served from: ${path.join(__dirname, "../client")}`
+  );
 });

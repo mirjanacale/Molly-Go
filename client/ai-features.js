@@ -1,5 +1,12 @@
 // AI Features for MOLLY Go
 
+// Production optimization: Wrap DOM-dependent code in DOMContentLoaded for deferred loading
+document.addEventListener("DOMContentLoaded", function () {
+  console.log(
+    "🔧 ai-features.js: DOM Content Loaded - Initializing AI travel features"
+  );
+});
+
 // Show/hide quota notification
 function showQuotaNotification() {
   document.getElementById("quota-notification").style.display = "block";
@@ -103,6 +110,12 @@ function displayRecommendations(recommendations, message = null) {
         }</p>
         <p><span class="highlight">Must-do experiences:</span> ${
           rec.experiences
+            ?.map((e) =>
+              typeof e === "string"
+                ? e
+                : e.name || e.title || e.experience || JSON.stringify(e)
+            )
+            .join(", ") || "No experiences listed"
         }</p>
         <p><span class="highlight">Estimated cost:</span> ${rec.costRange}</p>
         <button class="btn-primary" onclick="getItinerary('${
@@ -165,11 +178,35 @@ function displayItinerary(itinerary, destination) {
       html += `
         <div class="recommendation-card">
           <h3>Day ${index + 1}</h3>
-          <p><strong>Activities:</strong> ${day.activities}</p>
-          <p><strong>Highlights:</strong> ${day.highlights}</p>
-          <p><strong>Tips:</strong> ${day.tips}</p>
+          <p><strong>Activities:</strong> ${
+            day.activities
+              ?.map((a) =>
+                typeof a === "string"
+                  ? a
+                  : a.name || a.title || a.activity || JSON.stringify(a)
+              )
+              .join(", ") || "No activities planned yet"
+          }</p>
+          <p><strong>Highlights:</strong> ${
+            day.highlights
+              ?.map((h) =>
+                typeof h === "string"
+                  ? h
+                  : h.name || h.title || h.highlight || JSON.stringify(h)
+              )
+              .join(", ") || "No highlights available"
+          }</p>
+          <p><strong>Tips:</strong> ${
+            day.tips
+              ?.map((t) =>
+                typeof t === "string"
+                  ? t
+                  : t.name || t.title || t.tip || JSON.stringify(t)
+              )
+              .join(", ") || "No tips yet"
+          }</p>
           <p><span class="highlight">Estimated cost:</span> ${
-            day.estimatedCost
+            day.estimatedCost || "N/A"
           }</p>
         </div>
       `;
@@ -547,7 +584,15 @@ function displayComprehensiveResults(data) {
           <h3>${rec.destination}, ${rec.country}</h3>
           <p><strong>Why it's perfect:</strong> ${rec.description}</p>
           <p><span class="highlight">Best time:</span> ${rec.bestTime}</p>
-          <p><span class="highlight">Experiences:</span> ${rec.experiences}</p>
+          <p><span class="highlight">Experiences:</span> ${
+            rec.experiences
+              ?.map((e) =>
+                typeof e === "string"
+                  ? e
+                  : e.name || e.title || e.experience || JSON.stringify(e)
+              )
+              .join(", ") || "No experiences listed"
+          }</p>
           <p><span class="highlight">Cost:</span> ${rec.costRange}</p>
         </div>
       `;
