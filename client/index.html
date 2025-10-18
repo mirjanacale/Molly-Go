@@ -326,10 +326,10 @@
       <div id="pe"></div>
     </div>
 
-    <!-- Optimized: Defer non-critical scripts for better initial page load performance -->
+    <!-- Critical: chatbot.js loads first to ensure functions are available for onclick handlers -->
+    <script src="chatbot.js"></script>
+    <!-- Non-critical scripts with defer for better performance -->
     <script src="app.js" defer></script>
     <script src="ai-features.js" defer></script>
-    <!-- Critical: chatbot.js loads last to ensure functions are available for onclick handlers -->
-    <script src="chatbot.js"></script>
   </body>
 </html>

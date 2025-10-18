@@ -1,4 +1,4 @@
-console.log(" chatbot.js loaded successfully");
+console.log("✅ chatbot.js loaded successfully");
 
 // MOLLY ChatBot Functionality
 let chatbotOpen = false;
@@ -85,12 +85,14 @@ function showAPIKeyWarning() {
 }
 
 // Debug: Test if chatbot functions are loaded
-console.log(" MOLLY ChatBot initialized!");
+console.log("🤖 MOLLY ChatBot initialized!");
 console.log(
-  " LiteAPI Key loaded:",
-  LITEAPI_KEY && LITEAPI_KEY == "your_liteapi_sandbox_key_here" ? "Yes" : " No"
+  "🔑 LiteAPI Key loaded:",
+  LITEAPI_KEY && LITEAPI_KEY == "your_liteapi_sandbox_key_here"
+    ? "Yes"
+    : "✅ No"
 );
-console.log(" Base URL:", BASE_URL);
+console.log("🌐 Base URL:", BASE_URL);
 
 // Create connection status badge
 function createStatusBadge() {
@@ -261,6 +263,8 @@ function toggleMollyChat() {
       if (retryPanel) {
         console.log("✅ mollychat-panel found on retry");
         toggleMollyChat();
+      } else {
+        console.error("❌ mollychat-panel still not found after retry");
       }
     }, 100);
     return;
@@ -270,18 +274,21 @@ function toggleMollyChat() {
     return;
   }
 
+  console.log("✅ Both elements found, toggling chatbot state");
   chatbotOpen = !chatbotOpen;
 
   if (chatbotOpen) {
     panel.classList.add("open");
-    toggle.textContent = " Hide Chat";
+    toggle.textContent = "💬 Hide Chat";
     toggle.style.background =
       "linear-gradient(135deg, #dc2626 0%, #991b1b 100%)";
+    console.log("✅ Chatbot opened");
   } else {
     panel.classList.remove("open");
-    toggle.textContent = " Chat with MOLLY";
+    toggle.textContent = "💬 Chat with MOLLY";
     toggle.style.background =
       "linear-gradient(135deg, #f2a908 0%, #a24d23 100%)";
+    console.log("✅ Chatbot closed");
   }
 }
 
@@ -298,7 +305,7 @@ async function sendMollyMessage() {
 
   // Enhanced DOM element validation
   if (!input) {
-    console.error("❌ mollychat-input-field element not found!");
+    console.error(" mollychat-input-field element not found!");
     return;
   }
 
@@ -719,4 +726,72 @@ console.log("🔧 Available functions:", {
   toggleMollyChat: typeof window.toggleMollyChat,
   sendMollyMessage: typeof window.sendMollyMessage,
   handleChatInputKeypress: typeof window.handleChatInputKeypress,
+});
+
+// Test function to verify button functionality
+window.testButtonClick = function () {
+  console.log("🧪 Test button click function called");
+  const button = document.getElementById("mollychat-toggle");
+  if (button) {
+    console.log("✅ Button element found:", button);
+    console.log("🔧 Button onclick attribute:", button.getAttribute("onclick"));
+    console.log("🔧 Button style:", button.style.cssText);
+    console.log("🔧 Button computed style:", window.getComputedStyle(button));
+
+    // Test if the function exists
+    if (typeof window.toggleMollyChat === "function") {
+      console.log("✅ toggleMollyChat function is available");
+      // Try calling it directly
+      try {
+        window.toggleMollyChat();
+        console.log("✅ toggleMollyChat called successfully");
+      } catch (error) {
+        console.error("❌ Error calling toggleMollyChat:", error);
+      }
+    } else {
+      console.error("❌ toggleMollyChat function is not available");
+    }
+  } else {
+    console.error("❌ Button element not found");
+  }
+};
+
+// Auto-test when DOM is ready
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("🔧 DOM Content Loaded - Initializing MOLLY ChatBot");
+  console.log("🔧 DOM Content Loaded - Running button test");
+  
+  setTimeout(() => {
+    window.testButtonClick();
+    
+    // Add alternative event listener as backup
+    const button = document.getElementById("mollychat-toggle");
+    if (button) {
+      console.log("🔧 Adding alternative click event listener");
+      button.addEventListener("click", function (event) {
+        console.log("🔧 Alternative click event listener triggered");
+        event.preventDefault();
+        event.stopPropagation();
+        toggleMollyChat();
+      });
+      
+      // Test if button is clickable
+      const rect = button.getBoundingClientRect();
+      console.log("🔧 Button position:", {
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        visible: rect.width > 0 && rect.height > 0,
+      });
+      
+      // Check if button is covered by other elements
+      const elementAtPoint = document.elementFromPoint(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2
+      );
+      console.log("🔧 Element at button center:", elementAtPoint);
+      console.log("🔧 Is button covered?", elementAtPoint !== button);
+    }
+  }, 1000);
 });
