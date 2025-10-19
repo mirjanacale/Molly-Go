@@ -5,16 +5,132 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MOLLY Go — Go Where Joy Lives</title>
     <link rel="stylesheet" href="styles.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <style>
+      /* --- Basic chatbot styles --- */
+      .chatbot-toggle {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: linear-gradient(135deg, #f2a908 0%, #a24d23 100%);
+        color: #fff;
+        border: none;
+        border-radius: 30px;
+        padding: 12px 20px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        z-index: 9999;
+        transition: all 0.2s ease-in-out;
+      }
+
+      .chatbot-toggle:hover {
+        transform: translateY(-3px);
+      }
+
+      .chatbot-panel {
+        position: fixed;
+        bottom: 90px;
+        right: 30px;
+        width: 340px;
+        height: 500px;
+        background: #fff;
+        border-radius: 15px;
+        display: none;
+        flex-direction: column;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        z-index: 9998;
+      }
+
+      .chatbot-panel.open {
+        display: flex;
+      }
+
+      .chatbot-header {
+        background: linear-gradient(135deg, #f2a908 0%, #a24d23 100%);
+        color: white;
+        font-weight: 600;
+        padding: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .chatbot-messages {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+        background: #fafafa;
+      }
+
+      .message {
+        margin: 8px 0;
+      }
+
+      .message.user .message-content {
+        background: #a24d23;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 12px 12px 0 12px;
+        margin-left: auto;
+        width: fit-content;
+      }
+
+      .message.assistant .message-content {
+        background: #ececec;
+        color: #333;
+        padding: 8px 12px;
+        border-radius: 12px 12px 12px 0;
+        width: fit-content;
+      }
+
+      .chatbot-input {
+        display: flex;
+        padding: 10px;
+        border-top: 1px solid #ddd;
+        background: #fff;
+      }
+
+      .chatbot-input input {
+        flex: 1;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        margin-right: 10px;
+        font-size: 14px;
+        outline: none;
+        background: #fff;
+        color: #333;
+        min-height: 20px;
+        box-sizing: border-box;
+      }
+
+      .chatbot-input input:focus {
+        border-color: #f2a908;
+        box-shadow: 0 0 0 2px rgba(242, 169, 8, 0.2);
+      }
+
+      .chatbot-input button {
+        background: linear-gradient(135deg, #f2a908 0%, #a24d23 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 8px 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .chatbot-input button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(242, 169, 8, 0.3);
+      }
+    </style>
   </head>
 
   <body>
-    <!-- ChatBot Toggle Button -->
+    <!-- Chat Toggle -->
     <button
       id="mollychat-toggle"
       class="chatbot-toggle"
@@ -23,313 +139,33 @@
       💬 Chat with MOLLY
     </button>
 
-    <!-- ChatBot Panel -->
+    <!-- Chat Panel -->
     <div id="mollychat-panel" class="chatbot-panel">
       <div class="chatbot-header">
-        <h3>💬 MOLLY Travel Buddy</h3>
+        <span>💬 MOLLY Travel Buddy</span>
         <button class="chatbot-close" onclick="toggleMollyChat()">×</button>
       </div>
       <div id="mollychat-messages" class="chatbot-messages">
         <div class="message assistant">
           <div class="message-content">
-            Hi there! 🌍 I'm MOLLY, your cheerful travel buddy! How are you
-            feeling today?
+            Hi there! 🌍 I'm MOLLY, your travel buddy! How can I help you today?
           </div>
         </div>
       </div>
       <div class="chatbot-input">
         <input
           type="text"
-          id="mollychat-input-field"
-          placeholder="Tell me about your travel dreams..."
+          id="chatInput"
+          placeholder="Tell me your destination..."
           onkeypress="handleChatInputKeypress(event)"
+          autocomplete="off"
+          spellcheck="false"
         />
-        <button onclick="sendMollyMessage()">Send</button>
+        <button id="sendBtn" onclick="handleSendClick()">Send</button>
       </div>
     </div>
 
-    <!-- Quota Limit Notification Banner -->
-    <div
-      id="quota-notification"
-      style="
-        background: linear-gradient(135deg, #f2a908 0%, #a24d23 100%);
-        color: white;
-        padding: 12px;
-        text-align: center;
-        font-weight: 600;
-        display: none;
-      "
-    >
-      <span
-        >🎭 Demo Mode Active: OpenAI quota exceeded - showing sample data. Add
-        billing to your OpenAI account for real AI-powered features!</span
-      >
-      <button
-        onclick="hideQuotaNotification()"
-        style="
-          background: rgba(255, 255, 255, 0.2);
-          border: none;
-          color: white;
-          margin-left: 15px;
-          padding: 5px 10px;
-          border-radius: 5px;
-          cursor: pointer;
-        "
-      >
-        ✕
-      </button>
-    </div>
-
-    <!-- Hero Section -->
-    <section class="hero-section">
-      <div class="hero-overlay"></div>
-      <div class="hero-content">
-        <div class="hero-text">
-          <h1 class="hero-title">MOLLY Go — Go Where Joy Lives.</h1>
-          <p class="hero-subtitle">
-            Discover festivals, parades, and hidden celebrations around the
-            world.<br />
-            Find your next trip, not by map — but by feeling.
-          </p>
-        </div>
-
-        <div class="hero-search">
-          <div class="search-container">
-            <span class="search-icon">🔍</span>
-            <input
-              type="text"
-              class="search-input"
-              id="destination-input"
-              placeholder="Find joy in… (e.g., Lisbon, Tokyo, Bali, Anywhere)"
-            />
-          </div>
-        </div>
-
-        <div class="hero-buttons">
-          <button class="btn-primary" onclick="getTravelRecommendations()">
-            Explore Events
-          </button>
-          <button class="btn-secondary" onclick="showAIFeatures()">
-            AI Travel Guide
-          </button>
-          <button class="btn-secondary" onclick="showHotelSearch()">
-            Find Hotels
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- AI Features Section -->
-    <section id="ai-features" class="ai-features-section" style="display: none">
-      <div class="ai-container">
-        <h2 class="ai-title">AI-Powered Travel Discovery</h2>
-
-        <div class="ai-form">
-          <div class="form-group">
-            <label for="mood-input">How are you feeling?</label>
-            <input
-              type="text"
-              id="mood-input"
-              placeholder="e.g., adventurous, peaceful, excited, nostalgic"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="interests-input">What interests you?</label>
-            <input
-              type="text"
-              id="interests-input"
-              placeholder="e.g., music festivals, local cuisine, art, nature"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="budget-input">Budget range</label>
-            <select id="budget-input">
-              <option value="budget">Budget ($0-100/day)</option>
-              <option value="mid-range">Mid-range ($100-300/day)</option>
-              <option value="luxury">Luxury ($300+/day)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="duration-input">Trip duration</label>
-            <select id="duration-input">
-              <option value="weekend">Weekend (2-3 days)</option>
-              <option value="week">Week (5-7 days)</option>
-              <option value="extended">Extended (10+ days)</option>
-            </select>
-          </div>
-
-          <button class="btn-primary" onclick="getRecommendations()">
-            Get AI Recommendations
-          </button>
-        </div>
-
-        <div id="recommendations-results" class="recommendations-results"></div>
-
-        <button class="btn-secondary" onclick="hideAIFeatures()">
-          Back to Hero
-        </button>
-      </div>
-    </section>
-
-    <!-- Hotel Search Section -->
-    <section
-      id="hotel-search"
-      class="hotel-search-section"
-      style="display: none"
-    >
-      <div class="hotel-container">
-        <h2 class="hotel-title">Find Your Perfect Stay</h2>
-        <p class="hotel-subtitle">
-          Search for hotels based on what you need, where you're going, and when
-        </p>
-
-        <div class="hotel-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="what-input">What type of stay?</label>
-              <select id="what-input">
-                <option value="">Select accommodation type</option>
-                <option value="luxury">Luxury Hotel</option>
-                <option value="boutique">Boutique Hotel</option>
-                <option value="business">Business Hotel</option>
-                <option value="budget">Budget Hotel</option>
-                <option value="resort">Resort</option>
-                <option value="hostel">Hostel</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="where-input">Where are you going?</label>
-              <input
-                type="text"
-                id="where-input"
-                placeholder="e.g., New York, London, Tokyo"
-              />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="when-checkin">Check-in Date</label>
-              <input
-                type="date"
-                id="when-checkin"
-                placeholder="Select check-in date"
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="when-checkout">Check-out Date</label>
-              <input
-                type="date"
-                id="when-checkout"
-                placeholder="Select check-out date"
-              />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="guests-input">Number of Guests</label>
-              <select id="guests-input">
-                <option value="1">1 Guest</option>
-                <option value="2">2 Guests</option>
-                <option value="3">3 Guests</option>
-                <option value="4">4 Guests</option>
-                <option value="5+">5+ Guests</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="country-code">Country Code</label>
-              <input
-                type="text"
-                id="country-code"
-                placeholder="e.g., US, UK, JP"
-                maxlength="2"
-                style="text-transform: uppercase"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="environment-select">Environment</label>
-            <select id="environment-select">
-              <option value="sandbox">Sandbox (Testing)</option>
-              <option value="production">Production (Live)</option>
-            </select>
-          </div>
-
-          <button class="btn-primary" onclick="searchHotels()">
-            🏨 Search Hotels
-          </button>
-        </div>
-
-        <div id="hotel-results" class="hotel-results"></div>
-
-        <button class="btn-secondary" onclick="hideHotelSearch()">
-          Back to Hero
-        </button>
-      </div>
-    </section>
-
-    <!-- Hidden sections for original functionality (can be accessed via navigation later) -->
-    <div id="original-app" style="display: none">
-      <h1>Hotel Booking Application</h1>
-      <div id="search" class="search">
-        <div class="input-group">
-          <label for="city">Enter city name (e.g. London)</label>
-          <input type="text" class="input-bk" id="city" value="New York" />
-        </div>
-        <div class="input-group">
-          <label for="countryCode">Enter country code (e.g. UK)</label>
-          <input type="text" class="input-bk" id="countryCode" value="US" />
-        </div>
-        <div class="input-group">
-          <label for="checkin">Check in (YYYY-MM-DD format)</label>
-          <input type="text" class="input-bk" id="checkin" value="2025-11-20" />
-        </div>
-        <div class="input-group">
-          <label for="checkout">Check out (YYYY-MM-DD format)</label>
-          <input
-            type="text"
-            class="input-bk"
-            id="checkout"
-            value="2025-11-21"
-          />
-        </div>
-        <div class="input-group">
-          <label for="adults">Number of adult guests staying</label>
-          <input type="text" class="input-bk" id="adults" value="1" />
-        </div>
-        <div class="input-group">
-          <label for="environment">Select Environment</label>
-          <select id="environment" class="input-bk">
-            <option value="sandbox">Sandbox</option>
-            <option value="production">Production</option>
-          </select>
-        </div>
-        <button class="price-btn mt-0" onclick="searchHotels()">
-          Search Hotels
-        </button>
-        <a href="details.html" class="price-btn"
-          >Look for rates for a single hotel</a
-        >
-      </div>
-      <div id="loader">Loading... Please wait.</div>
-      <div id="hotels"></div>
-      <div id="rates"></div>
-      <div id="payment-form"></div>
-      <div id="pe"></div>
-    </div>
-
-    <!-- Critical: chatbot.js loads first to ensure functions are available for onclick handlers -->
-    <script src="chatbot.js"></script>
-    <!-- Non-critical scripts with defer for better performance -->
-    <script src="app.js" defer></script>
-    <script src="ai-features.js" defer></script>
+    <!-- Chatbot Script -->
+    <script src="chatbot.js" defer></script>
   </body>
 </html>
