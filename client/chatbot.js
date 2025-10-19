@@ -711,9 +711,9 @@ const typingStyles = `
 `;
 
 // Inject typing styles
-const styleSheet = document.createElement("style");
-styleSheet.textContent = typingStyles;
-document.head.appendChild(styleSheet);
+const typingStyleSheet = document.createElement("style");
+typingStyleSheet.textContent = typingStyles;
+document.head.appendChild(typingStyleSheet);
 
 // Fixed: Make chatbot functions available to HTML buttons with safety checks
 window.toggleMollyChat = toggleMollyChat;
