@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LiteAPI Connection Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .test-container {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .test-result {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 5px;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+      }
+      .warning {
+        background: #fff3cd;
+        color: #856404;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .info {
+        background: #d1ecf1;
+        color: #0c5460;
+      }
+      pre {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-container">
+      <h1>🔍 LiteAPI Connection Test</h1>
+      <p>
+        This test verifies whether the LiteAPI endpoint is returning real hotel
+        data.
+      </p>
+
+      <div id="test-results">
+        <div class="test-result info">
+          <strong>🌍 Testing LiteAPI for city:</strong> Dubrovnik
+        </div>
+      </div>
+
+      <button
+        onclick="runTest()"
+        style="
+          background: #007bff;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 5px;
+          cursor: pointer;
+          margin: 10px 0;
+        "
+      >
+        Run Test
+      </button>
+
+      <div id="console-output"></div>
+    </div>
+
+    <script>
+      // ✅ LiteAPI Connection Test — Verifies real data fetch (21 Oct 2025)
+
+      function addResult(message, type = "info") {
+        const resultsDiv = document.getElementById("test-results");
+        const resultDiv = document.createElement("div");
+        resultDiv.className = `test-result ${type}`;
+        resultDiv.innerHTML = message;
+        resultsDiv.appendChild(resultDiv);
+      }
+
+      function addConsoleOutput(message) {
+        const consoleDiv = document.getElementById("console-output");
+        const pre = document.createElement("pre");
+        pre.textContent = message;
+        consoleDiv.appendChild(pre);
+      }
+
+      async function testLiteAPI() {
+        const cityName = "Dubrovnik"; // test with a known city
+        console.log("🌍 Testing LiteAPI for city:", cityName);
+        addResult(`<strong>🌍 Testing LiteAPI for city:</strong> ${cityName}`);
+
+        try {
+          // Test our server endpoint first
+          addResult("🔄 Testing server endpoint...", "info");
+          const serverResponse = await fetch(
+            `/api/hotels?city=${encodeURIComponent(cityName)}&countryCode=HR`
+          );
+          const serverData = await serverResponse.json();
+
+          console.log("✅ Server response:", serverData);
+          addResult(
+            `<strong>✅ Server response received:</strong> ${
+              serverData.items ? serverData.items.length : 0
+            } hotels found`,
+            "success"
+          );
+          addConsoleOutput(
+            `Server Response: ${JSON.stringify(serverData, null, 2)}`
+          );
+
+          if (serverData.items && serverData.items.length > 0) {
+            console.log(
+              "🏨 Sample hotels from server:",
+              serverData.items.slice(0, 3)
+            );
+            addResult(
+              `<strong>🏨 Sample hotels from server:</strong>`,
+              "success"
+            );
+            serverData.items.slice(0, 3).forEach((hotel, index) => {
+              addResult(
+                `${index + 1}. ${hotel.name} (${hotel.city})`,
+                "success"
+              );
+            });
+          }
+
+          // Test direct LiteAPI endpoint (if API key is available)
+          addResult("🔄 Testing direct LiteAPI endpoint...", "info");
+          try {
+            const directResponse = await fetch(
+              `https://api.liteapi.travel/v3.0/data/hotels?city=${cityName}`,
+              {
+                headers: {
+                  "X-API-Key": "your-api-key-here", // This will likely fail without real key
+                  Accept: "application/json",
+                },
+              }
+            );
+
+            if (directResponse.ok) {
+              const directData = await directResponse.json();
+              console.log("✅ Direct LiteAPI response:", directData);
+              addResult(
+                `<strong>✅ Direct LiteAPI response received</strong>`,
+                "success"
+              );
+              addConsoleOutput(
+                `Direct LiteAPI Response: ${JSON.stringify(
+                  directData,
+                  null,
+                  2
+                )}`
+              );
+            } else {
+              addResult(
+                `<strong>⚠️ Direct LiteAPI request failed:</strong> ${directResponse.status} ${directResponse.statusText}`,
+                "warning"
+              );
+            }
+          } catch (directError) {
+            addResult(
+              `<strong>⚠️ Direct LiteAPI test failed:</strong> ${directError.message}`,
+              "warning"
+            );
+          }
+        } catch (error) {
+          console.error("❌ Test failed:", error);
+          addResult(
+            `<strong>❌ Test failed:</strong> ${error.message}`,
+            "error"
+          );
+        }
+      }
+
+      function runTest() {
+        // Clear previous results
+        document.getElementById("test-results").innerHTML = `
+                <div class="test-result info">
+                    <strong>🌍 Testing LiteAPI for city:</strong> Dubrovnik
+                </div>
+            `;
+        document.getElementById("console-output").innerHTML = "";
+
+        testLiteAPI();
+      }
+
+      // Auto-run test on page load
+      window.addEventListener("load", () => {
+        setTimeout(runTest, 1000);
+      });
+    </script>
+  </body>
+</html>

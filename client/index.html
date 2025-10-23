@@ -130,6 +130,63 @@
   </head>
 
   <body>
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <h1
+          class="hero-title"
+          onclick="window.showHeroSection && window.showHeroSection()"
+          style="cursor: pointer"
+        >
+          MOLLY Go — Go Where Joy Lives.
+        </h1>
+        <p class="hero-subtitle">
+          Discover festivals, parades, and hidden celebrations around the
+          world.<br />
+          Find your next trip, not by map — but by feeling.
+        </p>
+
+        <div class="hero-search">
+          <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" placeholder="new york" />
+          </div>
+        </div>
+
+        <div class="hero-buttons">
+          <button id="exploreBtn" class="btn-primary">Explore Events</button>
+          <button id="guideBtn" class="btn-secondary">AI Travel Guide</button>
+          <button id="hotelsBtn" class="btn-secondary">Find Hotels</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Content Sections -->
+    <div id="events-section" class="content-section">
+      <div class="section-content">
+        <h2>🎪 Explore Events</h2>
+        <p>Discover amazing events and festivals around the world!</p>
+        <div id="events-results" class="events-grid"></div>
+      </div>
+    </div>
+
+    <div id="guide-section" class="content-section">
+      <div class="section-content">
+        <h2>🧭 AI Travel Guide</h2>
+        <p>Get personalized travel recommendations and local insights!</p>
+        <div id="guide-results" class="guide-grid"></div>
+      </div>
+    </div>
+
+    <div id="hotels-section" class="content-section">
+      <div class="section-content">
+        <h2>🏨 Find Hotels</h2>
+        <p>Book the perfect accommodation for your trip!</p>
+        <div id="hotels-results" class="hotels-grid"></div>
+      </div>
+    </div>
+
     <!-- Chat Toggle -->
     <button
       id="mollychat-toggle"
@@ -167,5 +224,33 @@
 
     <!-- Chatbot Script -->
     <script src="chatbot.js" defer></script>
+
+    <!-- Shared Fetch Functions -->
+    <script src="shared-fetch.js" defer></script>
+
+    <!-- Hero Search Functionality -->
+    <script src="hero.js" defer></script>
+
+    <!-- API Test Script -->
+    <script src="test-api.js" defer></script>
+
+    <!-- Environment Variables Loader -->
+    <script src="env-loader.js" defer></script>
+
+    <!-- Button functionality is handled by hero.js -->
+    <script>
+      // Test script loading
+      console.log(
+        "📋 Script loading test - all scripts should be loaded by now"
+      );
+      console.log("🔍 Available functions:", {
+        toggleMollyChat: typeof toggleMollyChat,
+        handleChatInputKeypress: typeof handleChatInputKeypress,
+        handleSendClick: typeof handleSendClick,
+      });
+    </script>
+
+    <!-- LiteAPI Diagnostics Panel -->
+    <script src="diagnostics.js" defer></script>
   </body>
 </html>

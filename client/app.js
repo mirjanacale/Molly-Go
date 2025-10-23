@@ -58,8 +58,18 @@ function displayRatesAndHotels(rates) {
 			<div class='flex items-start'>
 				<div class='card-image'>
 					<img
-						src='${rate.hotel.main_photo}'
+						src='${
+              rate.hotel.main_photo ||
+              rate.hotel.thumbnail ||
+              rate.hotel.image ||
+              rate.hotel.imageUrl ||
+              rate.hotel.media?.[0]?.url ||
+              rate.hotel.photos?.[0]?.url ||
+              "https://source.unsplash.com/featured/?hotel," +
+                encodeURIComponent(rate.hotel.city || "destination")
+            }'
 						alt='hotel'
+						onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'"
 					/>
 				</div>
 				<div class='flex-between-end w-full'>
