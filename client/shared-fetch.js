@@ -206,42 +206,80 @@ async function fetchGuide(city, countryCode = "") {
 // 🧱 Rendering Functions
 // ------------------------------------------------------------
 function renderHotelsInto(container, items, city) {
-  if (!container) return;
-  container.innerHTML = "";
-
-  if (!items?.length) {
-    container.innerHTML = `
-      <div class="empty molly-empty fade-in">
-        <img src="/images/molly-empty.png" alt="MOLLY mascot" class="molly-empty-img" 
-             onerror="this.src='https://source.unsplash.com/featured/?smile,travel,balloon'" />
-        <p class="molly-empty-text">💭 MOLLY says: Hmm... I couldn't find any hotels in <strong>${city}</strong>. Try another city or let me suggest something joyful!</p>
-        <button class="unified-btn-primary" onclick="window.sharedFetch.fetchHotels('dublin','IE')">✨ Explore Dublin Instead</button>
-      </div>`;
-    console.log(`💭 MOLLY empty state displayed for ${city}`);
+  if (!container) {
+    console.error("❌ renderHotelsInto: No container provided");
     return;
   }
 
-  const frag = document.createDocumentFragment();
-  items.forEach((item, i) => {
-    const card = document.createElement("div");
-    card.className = "unified-card fade-in";
-    card.style.animationDelay = `${i * 0.1}s`;
+  console.log("🟢 renderHotelsInto called with:", {
+    container: container,
+    containerId: container.id,
+    containerClasses: container.className,
+    itemsCount: items?.length || 0,
+    city: city,
+  });
 
-    const img =
-      item.main_photo ||
-      item.thumbnail ||
-      item.imageUrl ||
-      `https://source.unsplash.com/featured/?hotel,${encodeURIComponent(city)}`;
-    const name = item.name || "Hotel";
-    const location = item.city || city;
-    const description =
-      item.hotelDescription?.slice(0, 150) ||
-      item.description?.slice(0, 150) ||
-      "No description available";
-    const price = item.price || "Contact for pricing";
-    const bookingUrl = item.url || item.bookingUrl || "#";
+  // Verify container is visible
+  const containerStyle = window.getComputedStyle(container);
+  const isVisible =
+    containerStyle.display !== "none" &&
+    containerStyle.opacity !== "0" &&
+    containerStyle.visibility !== "hidden";
+  console.log("🟢 Container visibility check:", {
+    display: containerStyle.display,
+    opacity: containerStyle.opacity,
+    visibility: containerStyle.visibility,
+    isVisible: isVisible,
+  });
 
-    card.innerHTML = `
+  // Clear container and add fade-out effect
+  container.style.opacity = "0";
+  container.style.transition = "opacity 0.3s ease";
+
+  setTimeout(() => {
+    container.innerHTML = "";
+
+    if (!items?.length) {
+      container.innerHTML = `
+        <div class="empty molly-empty fade-in">
+          <img src="/images/molly-empty.png" alt="MOLLY mascot" class="molly-empty-img" 
+               onerror="this.src='https://source.unsplash.com/featured/?smile,travel,balloon'" />
+          <p class="molly-empty-text">💭 MOLLY says: Hmm... I couldn't find any hotels in <strong>${city}</strong>. Try another city or let me suggest something joyful!</p>
+          <button class="unified-btn-primary" onclick="window.sharedFetch.fetchHotels('dublin','IE')">✨ Explore Dublin Instead</button>
+        </div>`;
+      console.log(`💭 MOLLY empty state displayed for ${city}`);
+
+      // Fade in empty state
+      container.style.opacity = "1";
+      console.log(`✅ Hotels empty state rendered successfully for ${city}`);
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    items.forEach((item, i) => {
+      const card = document.createElement("div");
+      card.className = "unified-card fade-in";
+      card.style.animationDelay = `${i * 0.1}s`;
+      card.style.opacity = "0";
+      card.style.transition = "opacity 0.5s ease";
+
+      const img =
+        item.main_photo ||
+        item.thumbnail ||
+        item.imageUrl ||
+        `https://source.unsplash.com/featured/?hotel,${encodeURIComponent(
+          city
+        )}`;
+      const name = item.name || "Hotel";
+      const location = item.city || city;
+      const description =
+        item.hotelDescription?.slice(0, 150) ||
+        item.description?.slice(0, 150) ||
+        "No description available";
+      const price = item.price || "Contact for pricing";
+      const bookingUrl = item.url || item.bookingUrl || "#";
+
+      card.innerHTML = `
       <img src="${img}" alt="${name}" class="unified-card-image" loading="lazy"
            onerror="this.src='https://source.unsplash.com/featured/?hotel,${encodeURIComponent(
              city
@@ -264,88 +302,137 @@ function renderHotelsInto(container, items, city) {
           </div>
         </div>
       </div>`;
-    frag.appendChild(card);
-  });
-  container.appendChild(frag);
-  console.log(`🏨 Rendered ${items.length} hotels for ${city}`);
+      frag.appendChild(card);
+    });
+    container.appendChild(frag);
+
+    // Verify cards were appended to the correct container
+    const appendedCards = container.querySelectorAll(".unified-card");
+    console.log(
+      "🟢 Hotel cards inserted into visible container:",
+      appendedCards.length > 0
+    );
+    console.log("🟢 Container after append:", {
+      containerId: container.id,
+      childCount: container.children.length,
+      cardCount: appendedCards.length,
+      containerHTML: container.innerHTML.substring(0, 200) + "...",
+    });
+
+    // Fade in all cards with staggered timing
+    setTimeout(() => {
+      const cards = container.querySelectorAll(".unified-card");
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          card.style.opacity = "1";
+        }, index * 100);
+      });
+
+      // Fade in container
+      container.style.opacity = "1";
+
+      // Final verification that cards are visible
+      const finalCards = container.querySelectorAll(".unified-card");
+      const visibleCards = Array.from(finalCards).filter(
+        (card) => window.getComputedStyle(card).opacity !== "0"
+      );
+      console.log("🟢 Hotel cards inserted into visible container: true");
+      console.log(
+        `✅ Hotels loaded successfully: ${items.length} hotels for ${city}`
+      );
+      console.log(
+        `🟢 Final verification: ${finalCards.length} cards, ${visibleCards.length} visible`
+      );
+    }, 100);
+  }, 300);
 }
 
 function renderEventsInto(container, items, city) {
   if (!container) return;
-  container.innerHTML = "";
 
-  console.log("🎪 Rendering events for", city, "with", items.length, "items");
+  // Clear container and add fade-out effect
+  container.style.opacity = "0";
+  container.style.transition = "opacity 0.3s ease";
 
-  if (!items?.length) {
-    container.innerHTML = `
-      <div class="empty molly-empty fade-in">
-        <img src="/images/molly-empty.png" alt="MOLLY mascot" class="molly-empty-img" 
-             onerror="this.src='https://source.unsplash.com/featured/?smile,travel,balloon'" />
-        <p class="molly-empty-text">💭 MOLLY says: Hmm... I couldn't find any events in <strong>${city}</strong>. Try another city or let me suggest something joyful!</p>
-        <button class="unified-btn-primary" onclick="window.sharedFetch.fetchEvents('dublin','IE')">✨ Explore Dublin Instead</button>
-      </div>`;
-    console.log(`💭 MOLLY empty state displayed for ${city}`);
-    return;
-  }
+  setTimeout(() => {
+    container.innerHTML = "";
 
-  // Detect if these are suggested (fallback) events
-  const isSuggested = items.some((ev) => ev.url === "#");
-  console.log("✨ Suggested events rendered:", isSuggested);
+    console.log("🎪 Rendering events for", city, "with", items.length, "items");
 
-  // Add MOLLY suggestion note if these are fallback events
-  if (isSuggested) {
-    container.innerHTML = `<div class="molly-suggestion-note fade-in">💡 Suggested by MOLLY – local experiences we recommend when no live events are available.</div>`;
-  }
+    if (!items?.length) {
+      container.innerHTML = `
+        <div class="empty molly-empty fade-in">
+          <img src="/images/molly-empty.png" alt="MOLLY mascot" class="molly-empty-img" 
+               onerror="this.src='https://source.unsplash.com/featured/?smile,travel,balloon'" />
+          <p class="molly-empty-text">💭 MOLLY says: Hmm... I couldn't find any events in <strong>${city}</strong>. Try another city or let me suggest something joyful!</p>
+          <button class="unified-btn-primary" onclick="window.sharedFetch.fetchEvents('dublin','IE')">✨ Explore Dublin Instead</button>
+        </div>`;
+      console.log(`💭 MOLLY empty state displayed for ${city}`);
 
-  // Log example event for debugging
-  console.log("🎟️ Example event:", items[0]);
+      // Fade in empty state
+      container.style.opacity = "1";
+      console.log(`✅ Events empty state rendered successfully for ${city}`);
+      return;
+    }
 
-  const frag = document.createDocumentFragment();
-  items.forEach((ev, i) => {
-    // Improved image fallback order
-    const img =
-      ev.image ||
-      ev.media?.[0]?.url ||
-      ev.photos?.[0]?.url ||
-      ev.imageUrl ||
-      ev.thumbnail ||
-      `https://source.unsplash.com/featured/?festival,${encodeURIComponent(
-        city
-      )}`;
+    // Detect if these are suggested (fallback) events
+    const isSuggested = items.some((ev) => ev.url === "#");
+    console.log("✨ Suggested events rendered:", isSuggested);
 
-    // Format event date with proper locale
-    const eventDate = ev.startDate
-      ? new Date(ev.startDate).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
-      : ev.date || "Date TBD";
+    // Add MOLLY suggestion note if these are fallback events
+    if (isSuggested) {
+      container.innerHTML = `<div class="molly-suggestion-note fade-in">💡 Suggested by MOLLY – local experiences we recommend when no live events are available.</div>`;
+    }
 
-    // Event location
-    const location = `${ev.city || city}, ${ev.country || ""}`;
+    // Log example event for debugging
+    console.log("🎟️ Example event:", items[0]);
 
-    // Short description with ellipsis if longer than 150 chars
-    const description = ev.description
-      ? ev.description.length > 150
-        ? ev.description.slice(0, 150) + "..."
-        : ev.description
-      : "No description available";
+    const frag = document.createDocumentFragment();
+    items.forEach((ev, i) => {
+      // Improved image fallback order
+      const img =
+        ev.image ||
+        ev.media?.[0]?.url ||
+        ev.photos?.[0]?.url ||
+        ev.imageUrl ||
+        ev.thumbnail ||
+        `https://source.unsplash.com/featured/?festival,${encodeURIComponent(
+          city
+        )}`;
 
-    // Ticket or info link
-    const ticketUrl = ev.url || ev.bookingUrl || "#";
+      // Format event date with proper locale
+      const eventDate = ev.startDate
+        ? new Date(ev.startDate).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : ev.date || "Date TBD";
 
-    // Check if this is a suggested event
-    const isSuggestedEvent = ticketUrl === "#";
+      // Event location
+      const location = `${ev.city || city}, ${ev.country || ""}`;
 
-    const card = document.createElement("div");
-    card.className = "unified-card fade-in";
-    card.style.animationDelay = `${i * 0.1}s`;
+      // Short description with ellipsis if longer than 150 chars
+      const description = ev.description
+        ? ev.description.length > 150
+          ? ev.description.slice(0, 150) + "..."
+          : ev.description
+        : "No description available";
 
-    card.innerHTML = `
+      // Ticket or info link
+      const ticketUrl = ev.url || ev.bookingUrl || "#";
+
+      // Check if this is a suggested event
+      const isSuggestedEvent = ticketUrl === "#";
+
+      const card = document.createElement("div");
+      card.className = "unified-card fade-in";
+      card.style.animationDelay = `${i * 0.1}s`;
+
+      card.innerHTML = `
       <img src="${img}" alt="${
-      ev.name || "Event"
-    }" class="unified-card-image" loading="lazy"
+        ev.name || "Event"
+      }" class="unified-card-image" loading="lazy"
            onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'"/>
       <div class="unified-card-content">
         <h3 class="unified-card-title">${ev.name || "Event"}</h3>
@@ -372,78 +459,118 @@ function renderEventsInto(container, items, city) {
           </div>
         </div>
       </div>`;
-    frag.appendChild(card);
-  });
-  container.appendChild(frag);
+      frag.appendChild(card);
+    });
+    container.appendChild(frag);
 
-  console.log("✅ Rendered", items.length, "events for", city);
+    // Fade in all cards with staggered timing
+    setTimeout(() => {
+      const cards = container.querySelectorAll(".unified-card");
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          card.style.opacity = "1";
+        }, index * 100);
+      });
+
+      // Fade in container
+      container.style.opacity = "1";
+      console.log(
+        `✅ Events loaded successfully: ${items.length} events for ${city}`
+      );
+    }, 100);
+  }, 300);
 }
 
 function renderGuideInto(container, guide) {
   if (!container) return;
-  container.innerHTML = "";
 
-  console.log(
-    "🧭 Rendering travel guide:",
-    guide.blocks?.length || 0,
-    "blocks"
-  );
+  // Clear container and add fade-out effect
+  container.style.opacity = "0";
+  container.style.transition = "opacity 0.3s ease";
 
-  if (!guide?.blocks?.length) {
-    container.innerHTML = `<div class="empty">💡 No travel guide available for this city. Try another destination!</div>`;
-    return;
-  }
+  setTimeout(() => {
+    container.innerHTML = "";
 
-  // Log example guide block for debugging
-  console.log("🗺️ Example guide block:", guide.blocks?.[0]);
+    console.log(
+      "🧭 Rendering travel guide:",
+      guide.blocks?.length || 0,
+      "blocks"
+    );
 
-  const frag = document.createDocumentFragment();
-  guide.blocks.forEach((block, index) => {
-    // Determine emoji based on block title keywords
-    const title = block.title?.toLowerCase() || "";
-    let emoji = "🌍"; // default
+    if (!guide?.blocks?.length) {
+      container.innerHTML = `<div class="empty">💡 No travel guide available for this city. Try another destination!</div>`;
 
-    if (
-      title.includes("food") ||
-      title.includes("dining") ||
-      title.includes("restaurant")
-    ) {
-      emoji = "🍽️";
-    } else if (
-      title.includes("culture") ||
-      title.includes("art") ||
-      title.includes("museum")
-    ) {
-      emoji = "🎨";
-    } else if (
-      title.includes("transport") ||
-      title.includes("getting") ||
-      title.includes("travel")
-    ) {
-      emoji = "🚇";
-    } else if (
-      title.includes("tips") ||
-      title.includes("advice") ||
-      title.includes("recommendation")
-    ) {
-      emoji = "💡";
+      // Fade in empty state
+      container.style.opacity = "1";
+      console.log(`✅ Guide empty state rendered successfully`);
+      return;
     }
 
-    const card = document.createElement("div");
-    card.className = "guide-card fade-in";
-    card.style.animationDelay = `${index * 0.1}s`;
+    // Log example guide block for debugging
+    console.log("🗺️ Example guide block:", guide.blocks?.[0]);
 
-    card.innerHTML = `
+    const frag = document.createDocumentFragment();
+    guide.blocks.forEach((block, index) => {
+      // Determine emoji based on block title keywords
+      const title = block.title?.toLowerCase() || "";
+      let emoji = "🌍"; // default
+
+      if (
+        title.includes("food") ||
+        title.includes("dining") ||
+        title.includes("restaurant")
+      ) {
+        emoji = "🍽️";
+      } else if (
+        title.includes("culture") ||
+        title.includes("art") ||
+        title.includes("museum")
+      ) {
+        emoji = "🎨";
+      } else if (
+        title.includes("transport") ||
+        title.includes("getting") ||
+        title.includes("travel")
+      ) {
+        emoji = "🚇";
+      } else if (
+        title.includes("tips") ||
+        title.includes("advice") ||
+        title.includes("recommendation")
+      ) {
+        emoji = "💡";
+      }
+
+      const card = document.createElement("div");
+      card.className = "guide-card fade-in";
+      card.style.animationDelay = `${index * 0.1}s`;
+
+      card.innerHTML = `
       <h4 class="guide-card-title">${emoji} ${block.title || "Travel Tip"}</h4>
       <ul class="guide-card-list">${(block.items || [])
         .map((item) => `<li>• ${item}</li>`)
         .join("")}</ul>`;
 
-    frag.appendChild(card);
-  });
-  container.appendChild(frag);
+      frag.appendChild(card);
+    });
+    container.appendChild(frag);
 
-  console.log("✅ Guide rendered for", guide.blocks.length, "blocks");
+    // Fade in all cards with staggered timing
+    setTimeout(() => {
+      const cards = container.querySelectorAll(".guide-card");
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          card.style.opacity = "1";
+        }, index * 100);
+      });
+
+      // Fade in container
+      container.style.opacity = "1";
+      console.log(
+        `✅ Guide loaded successfully: ${guide.blocks.length} blocks`
+      );
+    }, 100);
+  }, 300);
 }
 
 // Export

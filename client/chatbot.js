@@ -23,6 +23,13 @@ function toggleMollyChat() {
   panel.classList.toggle("open", chatbotOpen);
   toggle.textContent = chatbotOpen ? "💬 Hide Chat" : "💬 Chat with MOLLY";
 
+  // Console logging for debugging
+  if (chatbotOpen) {
+    console.log("💬 Chat opened");
+  } else {
+    console.log("💬 Chat closed");
+  }
+
   // Focus the input field when chat opens
   if (chatbotOpen && input) {
     setTimeout(() => input.focus(), 100);
@@ -368,9 +375,16 @@ function handleSendClick() {
   sendMollyMessage();
 }
 
+// Function to check if chatbot is active
+function isChatbotActive() {
+  const panel = document.getElementById("mollychat-panel");
+  return panel && panel.classList.contains("open");
+}
+
 window.toggleMollyChat = toggleMollyChat;
 window.sendMollyMessage = sendMollyMessage;
 window.handleChatInputKeypress = handleChatInputKeypress;
 window.handleSendClick = handleSendClick;
+window.isChatbotActive = isChatbotActive;
 
 document.addEventListener("DOMContentLoaded", loadAPIConfig);

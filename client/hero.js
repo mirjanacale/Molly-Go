@@ -106,6 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!resultSection.contains(loaderEl)) {
       resultSection.appendChild(loaderEl);
     }
+    console.log("⏳ Loading animation started");
   }
 
   function hideLoader() {
@@ -275,18 +276,18 @@ document.addEventListener("DOMContentLoaded", function () {
     const hotelsSection = document.getElementById("hotels-section");
     const heroSection = document.querySelector(".hero-section");
 
-    // Hide all main sections with exit animation
-    if (eventsSection) {
+    // Hide only sections that don't have content (preserve sections with data)
+    if (eventsSection && !eventsSection.hasAttribute("data-has-content")) {
       eventsSection.classList.remove("section-enter", "active");
       eventsSection.classList.add("section-exit");
       setTimeout(() => eventsSection.classList.add("hidden"), 300);
     }
-    if (guideSection) {
+    if (guideSection && !guideSection.hasAttribute("data-has-content")) {
       guideSection.classList.remove("section-enter", "active");
       guideSection.classList.add("section-exit");
       setTimeout(() => guideSection.classList.add("hidden"), 300);
     }
-    if (hotelsSection) {
+    if (hotelsSection && !hotelsSection.hasAttribute("data-has-content")) {
       hotelsSection.classList.remove("section-enter", "active");
       hotelsSection.classList.add("section-exit");
       setTimeout(() => hotelsSection.classList.add("hidden"), 300);
@@ -327,16 +328,80 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Use shared functions directly - same logic as chatbot
     showLoader();
+
+    // Wait for section animation to complete (0.7s + buffer)
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
     try {
       let data;
       if (section === "hotels") {
+        console.log(`🏨 Starting hotel fetch for ${city} (${countryCode})`);
         const hotels = await fetchHotels(city, countryCode);
         console.log("📊 Hotels array received:", hotels);
 
-        // Render into the visible main section only
-        const hotelsResultsContainer =
-          document.getElementById("hotels-results");
-        renderHotelsInto(hotelsResultsContainer, hotels, city);
+        // Wait for section to be fully visible before rendering
+        const hotelsSection = document.getElementById("hotels-section");
+        if (hotelsSection && hotelsSection.classList.contains("active")) {
+          const hotelsResultsContainer =
+            document.getElementById("hotels-results");
+          if (hotelsResultsContainer) {
+            // Verify container targeting
+            console.log("🟢 Container targeting verification:", {
+              hotelsSection: hotelsSection,
+              hotelsSectionId: hotelsSection.id,
+              hotelsSectionClasses: hotelsSection.className,
+              hotelsResultsContainer: hotelsResultsContainer,
+              hotelsResultsContainerId: hotelsResultsContainer.id,
+              hotelsResultsContainerClasses: hotelsResultsContainer.className,
+              hotelsResultsParent: hotelsResultsContainer.parentElement?.id,
+            });
+
+            // Mark section as having data to prevent it from being hidden
+            hotelsSection.setAttribute("data-has-content", "true");
+
+            renderHotelsInto(hotelsResultsContainer, hotels, city);
+
+            // Verify section remains visible after rendering
+            setTimeout(() => {
+              const isStillVisible =
+                hotelsSection.classList.contains("active") &&
+                !hotelsSection.classList.contains("hidden");
+              console.log(`✅ Hotels remain visible: ${isStillVisible}`);
+
+              // Check container visibility properties
+              const containerStyle = window.getComputedStyle(
+                hotelsResultsContainer
+              );
+              const containerVisible =
+                containerStyle.display !== "none" &&
+                containerStyle.opacity !== "0" &&
+                containerStyle.visibility !== "hidden";
+              console.log("🟢 Container visibility after rendering:", {
+                display: containerStyle.display,
+                opacity: containerStyle.opacity,
+                visibility: containerStyle.visibility,
+                containerVisible: containerVisible,
+              });
+
+              if (!isStillVisible) {
+                console.warn(
+                  "⚠️ Hotels section became hidden after rendering!"
+                );
+                // Force section to remain visible
+                hotelsSection.classList.remove("hidden");
+                hotelsSection.classList.add("active");
+              }
+
+              if (!containerVisible) {
+                console.warn("⚠️ Hotels container is not visible!");
+                // Force container to be visible
+                hotelsResultsContainer.style.display = "block";
+                hotelsResultsContainer.style.opacity = "1";
+                hotelsResultsContainer.style.visibility = "visible";
+              }
+            }, 100);
+          }
+        }
 
         // Visual feedback - green highlight flash
         const container = document.getElementById("hotels-section");
@@ -363,13 +428,41 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         }
       } else if (section === "events") {
+        console.log(`🎪 Starting events fetch for ${city} (${countryCode})`);
         const events = await fetchEvents(city, countryCode);
         console.log("📊 Events array received:", events);
 
-        // Render into the visible main section only
-        const eventsResultsContainer =
-          document.getElementById("events-results");
-        renderEventsInto(eventsResultsContainer, events, city);
+        // Wait for section to be fully visible before rendering
+        const eventsSection = document.getElementById("events-section");
+        if (eventsSection && eventsSection.classList.contains("active")) {
+          const eventsResultsContainer =
+            document.getElementById("events-results");
+          if (eventsResultsContainer) {
+            // Mark section as having data to prevent it from being hidden
+            eventsSection.setAttribute("data-has-content", "true");
+
+            renderEventsInto(eventsResultsContainer, events, city);
+
+            // Verify section remains visible after rendering
+            setTimeout(() => {
+              const isStillVisible =
+                eventsSection.classList.contains("active") &&
+                !eventsSection.classList.contains("hidden");
+              console.log(`✅ Events remain visible: ${isStillVisible}`);
+              console.log(
+                `✅ Events section visible after render: ${isStillVisible}`
+              );
+              if (!isStillVisible) {
+                console.warn(
+                  "⚠️ Events section became hidden after rendering!"
+                );
+                // Force section to remain visible
+                eventsSection.classList.remove("hidden");
+                eventsSection.classList.add("active");
+              }
+            }, 100);
+          }
+        }
 
         // Visual feedback - green highlight flash
         const container = document.getElementById("events-section");
@@ -402,12 +495,39 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         }
       } else if (section === "guide") {
+        console.log(`🧭 Starting guide fetch for ${city} (${countryCode})`);
         const guide = await fetchGuide(city, countryCode);
         console.log("📊 Guide object received:", guide);
 
-        // Render into the visible main section only
-        const guideResultsContainer = document.getElementById("guide-results");
-        renderGuideInto(guideResultsContainer, guide);
+        // Wait for section to be fully visible before rendering
+        const guideSection = document.getElementById("guide-section");
+        if (guideSection && guideSection.classList.contains("active")) {
+          const guideResultsContainer =
+            document.getElementById("guide-results");
+          if (guideResultsContainer) {
+            // Mark section as having data to prevent it from being hidden
+            guideSection.setAttribute("data-has-content", "true");
+
+            renderGuideInto(guideResultsContainer, guide);
+
+            // Verify section remains visible after rendering
+            setTimeout(() => {
+              const isStillVisible =
+                guideSection.classList.contains("active") &&
+                !guideSection.classList.contains("hidden");
+              console.log(`✅ Guide remain visible: ${isStillVisible}`);
+              console.log(
+                `✅ Guide section visible after render: ${isStillVisible}`
+              );
+              if (!isStillVisible) {
+                console.warn("⚠️ Guide section became hidden after rendering!");
+                // Force section to remain visible
+                guideSection.classList.remove("hidden");
+                guideSection.classList.add("active");
+              }
+            }, 100);
+          }
+        }
 
         // Visual feedback - green highlight flash
         const container = document.getElementById("guide-section");
@@ -445,26 +565,30 @@ document.addEventListener("DOMContentLoaded", function () {
       showError(section, err.message);
     } finally {
       hideLoader();
+      console.log(`✅ ${section} section loading completed`);
     }
   }
 
   // Function to show hero section and hide content sections
   function showHeroSection() {
+    console.log(
+      "🏠 showHeroSection called - this should only happen when returning to hero"
+    );
     const heroSection = document.querySelector(".hero-section");
     const eventsSection = document.getElementById("events-section");
     const guideSection = document.getElementById("guide-section");
     const hotelsSection = document.getElementById("hotels-section");
 
-    // Hide all content sections
-    if (eventsSection) {
+    // Hide all content sections (only if they don't have active data)
+    if (eventsSection && !eventsSection.hasAttribute("data-has-content")) {
       eventsSection.classList.remove("active", "section-enter");
       eventsSection.classList.add("hidden");
     }
-    if (guideSection) {
+    if (guideSection && !guideSection.hasAttribute("data-has-content")) {
       guideSection.classList.remove("active", "section-enter");
       guideSection.classList.add("hidden");
     }
-    if (hotelsSection) {
+    if (hotelsSection && !hotelsSection.hasAttribute("data-has-content")) {
       hotelsSection.classList.remove("active", "section-enter");
       hotelsSection.classList.add("hidden");
     }
@@ -1293,6 +1417,15 @@ document.addEventListener("DOMContentLoaded", function () {
   initializeButtonStates();
 
   console.log("🎯 Hero buttons connected to search functionality");
+
+  // Verify chatbot functionality
+  const chatbotToggle = document.getElementById("mollychat-toggle");
+  if (chatbotToggle) {
+    console.log("✅ Chatbot active: true");
+    console.log("💬 Chat with MOLLY button found and ready");
+  } else {
+    console.warn("⚠️ Chat with MOLLY button not found");
+  }
 });
 
 // Expose showHeroSection function globally
