@@ -19,6 +19,13 @@ function toggleMollyChat() {
   const panel = document.getElementById("mollychat-panel");
   const toggle = document.getElementById("mollychat-toggle");
   const input = document.getElementById("chatInput");
+
+  // Early return if chat elements are not present (removed from DOM)
+  if (!panel || !toggle) {
+    console.log("💬 Chat widget is not available");
+    return;
+  }
+
   chatbotOpen = !chatbotOpen;
   panel.classList.toggle("open", chatbotOpen);
   toggle.textContent = chatbotOpen ? "💬 Hide Chat" : "💬 Chat with MOLLY";
@@ -45,6 +52,10 @@ function handleChatInputKeypress(e) {
 
 function addMessage(role, text, messageId = null) {
   const container = document.getElementById("mollychat-messages");
+  if (!container) {
+    console.log("💬 Chat messages container not available");
+    return null;
+  }
   const msg = document.createElement("div");
   msg.className = `message ${role}`;
   if (messageId) {
@@ -279,6 +290,10 @@ function displayGuideInChat(guide) {
 
 async function sendMollyMessage() {
   const input = document.getElementById("chatInput");
+  if (!input) {
+    console.log("💬 Chat input not available");
+    return;
+  }
   const msg = input.value.trim();
   if (!msg) return;
 
@@ -378,7 +393,7 @@ function handleSendClick() {
 // Function to check if chatbot is active
 function isChatbotActive() {
   const panel = document.getElementById("mollychat-panel");
-  return panel && panel.classList.contains("open");
+  return panel !== null && panel.classList.contains("open");
 }
 
 window.toggleMollyChat = toggleMollyChat;

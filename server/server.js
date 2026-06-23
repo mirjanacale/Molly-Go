@@ -32,8 +32,8 @@ if (!apiKey) {
 }
 console.log("🧪 ENV CHECK:");
 console.log(
-  "OPENAI_API_KEY:",
-  process.env.OPENAI_API_KEY ? "✅ Loaded" : "❌ Missing"
+  "GEMINI_API_KEY:",
+  process.env.GEMINI_API_KEY ? "✅ Loaded" : "❌ Missing"
 );
 console.log(
   "SAND_API_KEY:",
@@ -49,20 +49,18 @@ console.log("PORT:", process.env.PORT || "❌ Missing");
 console.log("🔐 ENV TEST:", {
   SAND_API_KEY: !!process.env.SAND_API_KEY,
   PROD_API_KEY: !!process.env.PROD_API_KEY,
-  OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+  GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
   NODE_ENV: process.env.NODE_ENV || "not set",
 });
 
-if (!process.env.SAND_API_KEY || !process.env.OPENAI_API_KEY) {
+if (!process.env.SAND_API_KEY || !process.env.GEMINI_API_KEY) {
   console.warn("⚠️ Missing required API keys in .env file!");
-  // Add fallback DEMO mode
   if (!process.env.SAND_API_KEY) {
     console.warn("⚠️ No LiteAPI sandbox key found — running in DEMO mode");
     process.env.SAND_API_KEY = "DEMO";
   }
-  if (!process.env.OPENAI_API_KEY) {
-    console.warn("⚠️ No OpenAI key found — running in DEMO mode");
-    process.env.OPENAI_API_KEY = "DEMO";
+  if (!process.env.GEMINI_API_KEY) {
+    console.warn("⚠️ No Gemini key found — running in DEMO mode");
   }
 } else {
   console.log("✅ All required keys found, proceeding to initialize server...");
@@ -132,6 +130,26 @@ async function fetchLite(path, { signal, params } = {}) {
 // Normalization helpers
 function normalizeHotel(h, city) {
   // 🔍 COMPREHENSIVE IMAGE EXTRACTION - Try all possible image field variations
+  // Log image field exploration for debugging (only for first hotel to avoid spam)
+  if (!normalizeHotel._logged) {
+    console.log("🔍 Exploring image fields in raw hotel object:");
+    console.log("  - h.photo_main:", h?.photo_main);
+    console.log("  - h.media:", h?.media);
+    console.log("  - h.media?.[0]?.url:", h?.media?.[0]?.url);
+    console.log("  - h.imageUrl:", h?.imageUrl);
+    console.log("  - h.photos:", h?.photos);
+    console.log("  - h.photos?.[0]?.url:", h?.photos?.[0]?.url);
+    console.log("  - h.images:", h?.images);
+    console.log("  - h.images?.[0]?.url:", h?.images?.[0]?.url);
+    console.log("  - h.image:", h?.image);
+    console.log("  - h.photoUrl:", h?.photoUrl);
+    console.log("  - h.mainImage:", h?.mainImage);
+    console.log("  - h.thumbnail:", h?.thumbnail);
+    console.log("  - h.photo:", h?.photo);
+    console.log("  - All hotel keys:", Object.keys(h || {}));
+    normalizeHotel._logged = true;
+  }
+
   const img =
     h?.photo_main ||
     h?.media?.[0]?.url ||
@@ -145,12 +163,31 @@ function normalizeHotel(h, city) {
     h?.photo ||
     null;
 
+  if (!normalizeHotel._imgLogged && img) {
+    console.log(`✅ Found image for ${h?.name || "hotel"}: ${img}`);
+    normalizeHotel._imgLogged = true;
+  } else if (!normalizeHotel._imgLogged && !img) {
+    console.warn(
+      `⚠️ No image found for ${h?.name || "hotel"} - will use fallback`
+    );
+    normalizeHotel._imgLogged = true;
+  }
+
   // price
   const price =
     h?.price?.amount || h?.rates?.[0]?.amount || h?.minPrice || null;
 
   // booking
   const bookingUrl = h?.bookingUrl || h?.links?.booking || h?.url || null;
+
+  // Extract description from multiple possible fields
+  const description =
+    h?.description ||
+    h?.shortDescription ||
+    h?.summary ||
+    h?.overview ||
+    h?.about ||
+    "";
 
   return {
     id: h?.id || h?.hotelId || `${h?.name}-${h?.address?.line1 || ""}`,
@@ -161,7 +198,10 @@ function normalizeHotel(h, city) {
     image: img,
     price,
     bookingUrl,
-    description: h?.description || "",
+    description: description,
+    hotelDescription: h?.hotelDescription || description,
+    shortDescription: h?.shortDescription || description,
+    summary: h?.summary || description,
     meta: h,
   };
 }
@@ -312,7 +352,7 @@ const express = require("express");
 const app = express();
 const liteApi = require("liteapi-node-sdk");
 const cors = require("cors");
-const OpenAI = require("openai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const crypto = require("crypto");
 
 // LiteAPI HMAC Signature Generation
@@ -323,24 +363,41 @@ function generateLiteAPISignature(method, path, publicKey, privateKey) {
   return hmac.digest("hex");
 }
 
-// Initialize OpenAI with error handling
-let openai = null;
+// Initialize Gemini with error handling
+let genAI = null;
 try {
-  if (
-    process.env.OPENAI_API_KEY &&
-    process.env.OPENAI_API_KEY !== "your_openai_api_key_here" &&
-    process.env.OPENAI_API_KEY.trim() !== ""
-  ) {
-    openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-    console.log("✅ OpenAI initialized successfully");
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey && geminiKey !== "your_gemini_api_key_here" && geminiKey.trim() !== "") {
+    genAI = new GoogleGenerativeAI(geminiKey);
+    console.log("✅ Gemini initialized successfully");
   } else {
-    console.log("⚠️ OpenAI API key not found - AI features will use mock data");
+    console.log("⚠️ Gemini API key not found - AI features will use mock data");
   }
 } catch (error) {
-  console.log("⚠️ OpenAI initialization failed:", error.message);
-  openai = null;
+  console.log("⚠️ Gemini initialization failed:", error.message);
+  genAI = null;
+}
+
+// Helper: call Gemini and return the text response
+async function askGemini(systemPrompt, userPrompt, opts = {}) {
+  const {
+    model = "gemini-1.5-flash",
+    temperature = 0.7,
+    maxOutputTokens = 1000,
+  } = opts;
+
+  const geminiModel = genAI.getGenerativeModel({
+    model,
+    systemInstruction: systemPrompt,
+    generationConfig: { temperature, maxOutputTokens },
+  });
+
+  const result = await geminiModel.generateContent(userPrompt);
+  let text = result.response.text();
+
+  // Strip markdown code fences if Gemini wraps JSON in them
+  text = text.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/, "");
+  return text;
 }
 
 app.use(
@@ -356,8 +413,8 @@ const sandbox_apiKey = process.env.SAND_API_KEY;
 // ✅ Environment validation and logging for better debugging
 console.log("🔧 Environment Variable Status:");
 console.log(
-  `  📊 OpenAI API Key: ${
-    process.env.OPENAI_API_KEY ? "✅ Found" : "❌ Missing"
+  `  📊 Gemini API Key: ${
+    process.env.GEMINI_API_KEY ? "✅ Found" : "❌ Missing"
   }`
 );
 console.log(
@@ -412,7 +469,7 @@ function setCachedResponse(key, data) {
   console.log(`💾 Cached response for: ${key}`);
 }
 
-// OpenAI Endpoints for MOLLY Go
+// Gemini AI Endpoints for MOLLY Go
 
 // Get travel recommendations based on mood/feeling
 app.post("/api/travel-recommendations", async (req, res) => {
@@ -426,8 +483,7 @@ app.post("/api/travel-recommendations", async (req, res) => {
       return res.json(cachedResponse);
     }
 
-    if (!openai) {
-      // Return mock data when OpenAI is not available
+    if (!genAI) {
       const mockRecommendations = [
         {
           destination: "Lisbon",
@@ -454,47 +510,34 @@ app.post("/api/travel-recommendations", async (req, res) => {
       const mockResponse = {
         recommendations: mockRecommendations,
         message:
-          "🎭 Demo mode: These are sample recommendations. Add your OpenAI API key for personalized AI suggestions!",
+          "🎭 Demo mode: These are sample recommendations. Add your Gemini API key for personalized AI suggestions!",
       };
 
-      // Cache mock response too
       setCachedResponse(cacheKey, mockResponse);
 
       return res.json(mockResponse);
     }
 
-    const prompt = `You are MOLLY Go, a travel expert who helps people find joy through travel. 
-    Based on the user's mood: "${mood}", interests: "${interests}", budget: "${budget}", and duration: "${duration}",
+    const prompt = `Based on the user's mood: "${mood}", interests: "${interests}", budget: "${budget}", and duration: "${duration}",
     suggest 3-5 amazing destinations where they can find joy, festivals, celebrations, or experiences that match their feelings.
-    
+
     For each destination, provide:
     1. Destination name and country
     2. Why it matches their mood/interests (2-3 sentences)
     3. Best time to visit
     4. 2-3 specific experiences or events to look for
     5. Estimated cost range
-    
+
     Make it warm, inspiring, and focused on emotional experiences rather than just tourist attractions.
     Format as a JSON array of objects with: destination, country, description, bestTime, experiences, costRange`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are MOLLY Go, a warm and inspiring travel expert who helps people discover joy through travel experiences.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      max_tokens: 1000,
-      temperature: 0.7,
-    });
+    const text = await askGemini(
+      "You are MOLLY Go, a warm and inspiring travel expert who helps people discover joy through travel experiences.",
+      prompt,
+      { temperature: 0.7, maxOutputTokens: 1000 }
+    );
 
-    const recommendations = JSON.parse(completion.choices[0].message.content);
+    const recommendations = JSON.parse(text);
     const response = { recommendations };
 
     // Cache the response
@@ -504,45 +547,9 @@ app.post("/api/travel-recommendations", async (req, res) => {
   } catch (error) {
     console.error("Error getting travel recommendations:", error);
 
-    // Handle quota limit gracefully
-    if (error.status === 429 || error.code === "insufficient_quota") {
-      console.log("⚠️ OpenAI quota exceeded - using mock data");
-      const mockRecommendations = [
-        {
-          destination: "Lisbon, Portugal",
-          reason: "Perfect blend of culture, food, and vibrant nightlife",
-          moodMatch: "excited, adventurous, curious",
-          bestTime: "Spring (March-May)",
-          budget: "Mid-range ($100-150/day)",
-          highlights: [
-            "Fado music venues",
-            "Pasteis de Nata",
-            "Tram 28",
-            "Belem Tower",
-          ],
-        },
-        {
-          destination: "Kyoto, Japan",
-          reason:
-            "Traditional temples meet modern innovation in a peaceful setting",
-          moodMatch: "peaceful, reflective, curious",
-          bestTime: "Spring (Cherry Blossoms) or Fall (Autumn Colors)",
-          budget: "Mid-range ($120-180/day)",
-          highlights: [
-            "Arashiyama Bamboo Grove",
-            "Fushimi Inari Shrine",
-            "Kaiseki dining",
-            "Traditional ryokans",
-          ],
-        },
-      ];
-      return res.json({
-        recommendations: mockRecommendations,
-        message:
-          "🎭 Demo mode: OpenAI quota exceeded - showing sample recommendations. Add billing to your OpenAI account for real AI-powered suggestions!",
-      });
+    if (error.status === 429) {
+      console.log("⚠️ Gemini rate limit - using mock data");
     }
-
     res.status(500).json({ error: "Failed to get travel recommendations" });
   }
 });
@@ -566,110 +573,16 @@ app.post("/api/generate-itinerary", async (req, res) => {
     Make it inspiring and focused on creating joyful memories.
     Format as a JSON object with days array containing: day, activities, highlights, tips, estimatedCost`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are MOLLY Go, creating personalized travel experiences focused on joy and authentic local culture.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      max_tokens: 1500,
-      temperature: 0.8,
-    });
+    const text = await askGemini(
+      "You are MOLLY Go, creating personalized travel experiences focused on joy and authentic local culture.",
+      prompt,
+      { temperature: 0.8, maxOutputTokens: 1500 }
+    );
 
-    const itinerary = JSON.parse(completion.choices[0].message.content);
+    const itinerary = JSON.parse(text);
     res.json({ itinerary });
   } catch (error) {
     console.error("Error generating itinerary:", error);
-
-    // Handle quota limit gracefully
-    if (error.status === 429 || error.code === "insufficient_quota") {
-      console.log("⚠️ OpenAI quota exceeded - using mock itinerary");
-      const mockItinerary = {
-        title: "Perfect Weekend Getaway",
-        days: [
-          {
-            day: 1,
-            title: "Arrival & Exploration",
-            activities: [
-              {
-                time: "10:00 AM",
-                activity: "Check into your hotel and freshen up",
-                location: "Hotel",
-              },
-              {
-                time: "12:00 PM",
-                activity: "Lunch at local market",
-                location: "Central Market",
-              },
-              {
-                time: "2:00 PM",
-                activity: "Walking tour of historic district",
-                location: "Old Town",
-              },
-              {
-                time: "6:00 PM",
-                activity: "Sunset dinner with local cuisine",
-                location: "Rooftop Restaurant",
-              },
-              {
-                time: "8:00 PM",
-                activity: "Evening entertainment - live music",
-                location: "Cultural Center",
-              },
-            ],
-          },
-          {
-            day: 2,
-            title: "Adventure & Culture",
-            activities: [
-              {
-                time: "9:00 AM",
-                activity: "Morning hike to scenic viewpoint",
-                location: "Mountain Trail",
-              },
-              {
-                time: "12:00 PM",
-                activity: "Picnic lunch with local specialties",
-                location: "Scenic Overlook",
-              },
-              {
-                time: "2:00 PM",
-                activity: "Visit to local museum or gallery",
-                location: "Art Museum",
-              },
-              {
-                time: "4:00 PM",
-                activity: "Coffee break at charming cafe",
-                location: "Historic Cafe",
-              },
-              {
-                time: "7:00 PM",
-                activity: "Farewell dinner at recommended restaurant",
-                location: "Fine Dining",
-              },
-            ],
-          },
-        ],
-        tips: [
-          "Book restaurants in advance for dinner reservations",
-          "Wear comfortable walking shoes for city exploration",
-          "Check local weather and pack accordingly",
-          "Learn a few basic phrases in the local language",
-        ],
-      };
-      return res.json({
-        itinerary: mockItinerary,
-        message:
-          "🎭 Demo mode: OpenAI quota exceeded - showing sample itinerary. Add billing to your OpenAI account for personalized AI itineraries!",
-      });
-    }
 
     res.status(500).json({ error: "Failed to generate itinerary" });
   }
@@ -678,8 +591,7 @@ app.post("/api/generate-itinerary", async (req, res) => {
 // Get local events and festivals for a destination
 app.post("/api/local-events", async (req, res) => {
   try {
-    if (!openai) {
-      // Return mock events when OpenAI is not available
+    if (!genAI) {
       const mockEvents = [
         {
           name: "Sunset Jazz Festival",
@@ -718,67 +630,16 @@ app.post("/api/local-events", async (req, res) => {
     For each event, provide: name, date, description, location, cost, and why it's special.
     Format as a JSON array of objects with: name, date, description, location, cost, specialNote`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are MOLLY Go, specializing in finding authentic local events and cultural experiences.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      max_tokens: 800,
-      temperature: 0.6,
-    });
+    const text = await askGemini(
+      "You are MOLLY Go, specializing in finding authentic local events and cultural experiences.",
+      prompt,
+      { temperature: 0.6, maxOutputTokens: 800 }
+    );
 
-    const events = JSON.parse(completion.choices[0].message.content);
+    const events = JSON.parse(text);
     res.json({ events });
   } catch (error) {
     console.error("Error getting local events:", error);
-
-    // Handle quota limit gracefully
-    if (error.status === 429 || error.code === "insufficient_quota") {
-      console.log("⚠️ OpenAI quota exceeded - using mock events");
-      const mockEvents = [
-        {
-          name: "Sunset Jazz Festival",
-          date: "Every Friday 6-10 PM",
-          description:
-            "Local jazz musicians perform against the backdrop of a beautiful sunset. Bring a blanket and enjoy the music!",
-          location: "Central Park Amphitheater",
-          cost: "Free",
-          specialNote:
-            "Perfect for a romantic evening or peaceful solo experience",
-        },
-        {
-          name: "Street Art Walking Tour",
-          date: "Every Saturday 2-4 PM",
-          description:
-            "Discover hidden murals and street art with local artists as your guides. Learn the stories behind each piece.",
-          location: "Downtown Arts District",
-          cost: "$25 per person",
-          specialNote: "Great for photography enthusiasts and art lovers",
-        },
-        {
-          name: "Local Food & Wine Tasting",
-          date: "Every Sunday 1-5 PM",
-          description:
-            "Sample authentic local cuisine paired with regional wines. Meet local producers and chefs.",
-          location: "Historic Wine Cellar",
-          cost: "$45 per person",
-          specialNote: "Includes 5-course tasting menu with wine pairings",
-        },
-      ];
-      return res.json({
-        events: mockEvents,
-        message:
-          "🎭 Demo mode: OpenAI quota exceeded - showing sample events. Add billing to your OpenAI account for real-time event discovery!",
-      });
-    }
 
     res.status(500).json({ error: "Failed to get local events" });
   }
@@ -791,7 +652,7 @@ app.post("/api/experience-search", async (req, res) => {
   try {
     const { mood, location, budget, duration } = req.body;
 
-    if (!openai) {
+    if (!genAI) {
       const mockExperiences = [
         {
           name: "Sunrise Meditation Hike",
@@ -818,33 +679,22 @@ app.post("/api/experience-search", async (req, res) => {
     }
 
     const prompt = `Find unique experiences in ${location} that match the mood: "${mood}" with budget: "${budget}" and duration: "${duration}".
-    
+
     Focus on:
     1. Authentic local experiences
     2. Activities that match the emotional state
     3. Hidden gems and off-the-beaten-path options
     4. Cultural immersion opportunities
-    
+
     Format as JSON array with: name, type, description, duration, cost, location, moodMatch`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are MOLLY Go, expert in matching experiences to emotional states and travel desires.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      max_tokens: 600,
-      temperature: 0.7,
-    });
+    const text = await askGemini(
+      "You are MOLLY Go, expert in matching experiences to emotional states and travel desires.",
+      prompt,
+      { temperature: 0.7, maxOutputTokens: 600 }
+    );
 
-    const experiences = JSON.parse(completion.choices[0].message.content);
+    const experiences = JSON.parse(text);
     res.json({ experiences });
   } catch (error) {
     console.error("Error searching experiences:", error);
@@ -958,6 +808,16 @@ app.get("/api/hotels", async (req, res) => {
       .map((h) => normalizeHotel(h, city))
       .filter((h) => h.name);
 
+    // 🔍 DIAGNOSTIC: Log normalized hotel data with image fields
+    if (list.length > 0) {
+      const firstNormalized = list[0];
+      console.log("🔍 NORMALIZED HOTEL DATA (first hotel):");
+      console.log("  - name:", firstNormalized.name);
+      console.log("  - image field:", firstNormalized.image);
+      console.log("  - has image:", !!firstNormalized.image);
+      console.log("  - all keys:", Object.keys(firstNormalized));
+    }
+
     console.log(`✅ Returning ${list.length} hotels for ${city}`);
     console.log("✅ Hotels fetched successfully:", list?.length || 0);
     res.json({ city, items: list });
@@ -1028,7 +888,7 @@ app.get("/api/events", async (req, res) => {
     const url = `${BASE_URL}/${endpoint}?cityName=${city}&countryCode=${countryCode}&limit=10`;
     console.log("📡 Fetching:", url);
     const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${API_KEY}` },
+      headers: { "X-API-Key": API_KEY, accept: "application/json" },
     });
     const data = await response.json();
     return data;
@@ -1117,7 +977,7 @@ app.get("/api/destination-insights/:destination", async (req, res) => {
   try {
     const { destination } = req.params;
 
-    if (!openai) {
+    if (!genAI) {
       const mockInsights = {
         destination: destination,
         bestTime: "Spring and Fall",
@@ -1141,7 +1001,7 @@ app.get("/api/destination-insights/:destination", async (req, res) => {
     }
 
     const prompt = `Provide comprehensive insights about ${destination} for travelers:
-    
+
     Include:
     1. Best time to visit
     2. Local tips and insider knowledge
@@ -1149,27 +1009,16 @@ app.get("/api/destination-insights/:destination", async (req, res) => {
     4. Cultural etiquette and customs
     5. Transportation tips
     6. Budget-friendly options
-    
+
     Format as JSON with: destination, bestTime, localTips, hiddenGems, culturalEtiquette, transportTips, budgetTips`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are MOLLY Go, providing authentic travel insights and local knowledge.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      max_tokens: 800,
-      temperature: 0.6,
-    });
+    const text = await askGemini(
+      "You are MOLLY Go, providing authentic travel insights and local knowledge.",
+      prompt,
+      { temperature: 0.6, maxOutputTokens: 800 }
+    );
 
-    const insights = JSON.parse(completion.choices[0].message.content);
+    const insights = JSON.parse(text);
     res.json(insights);
   } catch (error) {
     console.error("Error getting destination insights:", error);
@@ -1182,7 +1031,7 @@ app.post("/api/accommodation-search", async (req, res) => {
   try {
     const { accommodationType, mood, location, budget } = req.body;
 
-    if (!openai) {
+    if (!genAI) {
       const mockAccommodations = [
         {
           name: "Boutique Wellness Retreat",
@@ -1217,33 +1066,22 @@ app.post("/api/accommodation-search", async (req, res) => {
     }
 
     const prompt = `Find ${accommodationType} accommodations in ${location} that match mood: "${mood}" and budget: "${budget}".
-    
+
     Focus on:
     1. Atmosphere that matches the emotional state
     2. Amenities that support the desired experience
     3. Location benefits for the traveler's goals
     4. Unique features and character
-    
+
     Format as JSON array with: name, type, description, price, amenities, moodMatch, location`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are MOLLY Go, matching accommodations to traveler moods and experiences.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      max_tokens: 600,
-      temperature: 0.7,
-    });
+    const text = await askGemini(
+      "You are MOLLY Go, matching accommodations to traveler moods and experiences.",
+      prompt,
+      { temperature: 0.7, maxOutputTokens: 600 }
+    );
 
-    const accommodations = JSON.parse(completion.choices[0].message.content);
+    const accommodations = JSON.parse(text);
     res.json({ accommodations });
   } catch (error) {
     console.error("Error searching accommodations:", error);
@@ -1442,18 +1280,15 @@ app.post("/api/chat", async (req, res) => {
         Accept: "application/json",
       };
     } else if (endpoint === "guide") {
-      // AI Travel Guide - use OpenAI to generate content
+      // AI Travel Guide - use Gemini to generate content
       try {
         console.log("🧠 Generating AI Travel Guide for:", city);
 
-        const openai = require("openai");
-        const client = new openai.OpenAI({
-          apiKey: process.env.OPENAI_API_KEY,
-        });
+        if (!genAI) throw new Error("Gemini not initialized");
 
-        const prompt = `Write a friendly, practical travel guide about ${city}. 
-        Include culture, main attractions, food, and best visiting season. 
-        Keep tone warm and adventurous. 
+        const prompt = `Write a friendly, practical travel guide about ${city}.
+        Include culture, main attractions, food, and best visiting season.
+        Keep tone warm and adventurous.
         Format as JSON with these fields:
         {
           "summary": "2-3 paragraph overview of the city",
@@ -1463,14 +1298,12 @@ app.post("/api/chat", async (req, res) => {
           "tips": ["tip1", "tip2", "tip3", "tip4", "tip5"]
         }`;
 
-        const completion = await client.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.7,
-        });
-
-        const aiResponse = completion.choices[0].message.content;
-        console.log("🤖 OpenAI response received");
+        const aiResponse = await askGemini(
+          "You are MOLLY Go, a warm and adventurous travel guide writer.",
+          prompt,
+          { model: "gemini-1.5-pro", temperature: 0.7, maxOutputTokens: 1500 }
+        );
+        console.log("🤖 Gemini response received");
 
         // Parse AI response (handle both JSON and text formats)
         let guideData;
@@ -1516,10 +1349,10 @@ app.post("/api/chat", async (req, res) => {
             },
           ],
         });
-      } catch (openaiError) {
-        console.error("❌ OpenAI error:", openaiError.message);
+      } catch (guideError) {
+        console.error("❌ Gemini guide error:", guideError.message);
 
-        // Fallback to static guide if OpenAI fails
+        // Fallback to static guide if Gemini fails
         const cityImageUrl = `https://source.unsplash.com/featured/?${encodeURIComponent(
           city
         )},landmark,travel`;
@@ -1749,7 +1582,7 @@ app.get("/api/weather-insights/:destination", async (req, res) => {
     const { destination } = req.params;
     const { month } = req.query;
 
-    if (!openai) {
+    if (!genAI) {
       const mockWeatherInsights = {
         destination: destination,
         month: month || "current",
@@ -1777,34 +1610,23 @@ app.get("/api/weather-insights/:destination", async (req, res) => {
     const prompt = `Provide weather insights for ${destination} in ${
       month || "current month"
     }:
-    
+
     Include:
     1. Typical temperature and weather conditions
     2. Packing recommendations
     3. Seasonal activities available
     4. Local events happening during this time
     5. Weather-related travel tips
-    
+
     Format as JSON with: destination, month, temperature, weather, packingTips, seasonalActivities, seasonalEvents, tips`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are MOLLY Go, providing weather-aware travel planning and seasonal insights.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      max_tokens: 500,
-      temperature: 0.5,
-    });
+    const text = await askGemini(
+      "You are MOLLY Go, providing weather-aware travel planning and seasonal insights.",
+      prompt,
+      { temperature: 0.5, maxOutputTokens: 500 }
+    );
 
-    const weatherInsights = JSON.parse(completion.choices[0].message.content);
+    const weatherInsights = JSON.parse(text);
     res.json(weatherInsights);
   } catch (error) {
     console.error("Error getting weather insights:", error);
@@ -2359,7 +2181,7 @@ app.get("/proxy/hotels", async (req, res) => {
 app.listen(port, () => {
   console.log(`🚀 Server is running on port ${port}`);
   console.log(
-    `📊 OpenAI Integration: ${openai ? "✅ Active" : "❌ Disabled (Mock Mode)"}`
+    `📊 Gemini Integration: ${genAI ? "✅ Active" : "❌ Disabled (Mock Mode)"}`
   );
   console.log(
     `🏨 LiteAPI Integration: ${

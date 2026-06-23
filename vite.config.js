@@ -1,26 +1,31 @@
-const { defineConfig } = require("vite");
-const dotenv = require("dotenv");
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
-// Load environment variables
-dotenv.config();
-
-module.exports = defineConfig({
+export default defineConfig({
+  plugins: [react()],
   server: {
-    port: 5173, // Use standard Vite port
+    port: 5173,
     proxy: {
       "/api": {
         target: "http://localhost:3000",
         changeOrigin: true,
       },
+      "/search-rates": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+      "/search-hotels": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+      "/prebook": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+      "/book": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
     },
-  },
-  define: {
-    // Make environment variables available to client
-    "import.meta.env.VITE_LITEAPI_KEY": JSON.stringify(
-      process.env.VITE_LITEAPI_KEY
-    ),
-    "import.meta.env.VITE_LITEAPI_URL": JSON.stringify(
-      process.env.VITE_LITEAPI_URL
-    ),
   },
 });

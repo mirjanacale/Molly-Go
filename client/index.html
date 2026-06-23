@@ -165,7 +165,16 @@
     <!-- Content Sections -->
     <div id="events-section" class="content-section">
       <div class="section-content">
-        <h2>🎪 Explore Events</h2>
+        <div class="section-header">
+          <h2>🎪 Explore Events</h2>
+          <button
+            class="back-to-hero-btn"
+            onclick="returnToHero()"
+            title="Back to search"
+          >
+            ← Back to Search
+          </button>
+        </div>
         <p>Discover amazing events and festivals around the world!</p>
         <div id="events-results" class="events-grid"></div>
       </div>
@@ -173,7 +182,16 @@
 
     <div id="guide-section" class="content-section">
       <div class="section-content">
-        <h2>🧭 AI Travel Guide</h2>
+        <div class="section-header">
+          <h2>🧭 AI Travel Guide</h2>
+          <button
+            class="back-to-hero-btn"
+            onclick="returnToHero()"
+            title="Back to search"
+          >
+            ← Back to Search
+          </button>
+        </div>
         <p>Get personalized travel recommendations and local insights!</p>
         <div id="guide-results" class="guide-grid"></div>
       </div>
@@ -181,23 +199,32 @@
 
     <div id="hotels-section" class="content-section">
       <div class="section-content">
-        <h2>🏨 Find Hotels</h2>
+        <div class="section-header">
+          <h2>🏨 Find Hotels</h2>
+          <button
+            class="back-to-hero-btn"
+            onclick="returnToHero()"
+            title="Back to search"
+          >
+            ← Back to Search
+          </button>
+        </div>
         <p>Book the perfect accommodation for your trip!</p>
         <div id="hotels-results" class="hotels-grid"></div>
       </div>
     </div>
 
-    <!-- Chat Toggle -->
-    <button
+    <!-- Chat Toggle - REMOVED -->
+    <!-- <button
       id="mollychat-toggle"
       class="chatbot-toggle"
       onclick="toggleMollyChat()"
     >
       💬 Chat with MOLLY
-    </button>
+    </button> -->
 
-    <!-- Chat Panel -->
-    <div id="mollychat-panel" class="chatbot-panel">
+    <!-- Chat Panel - REMOVED -->
+    <!-- <div id="mollychat-panel" class="chatbot-panel">
       <div class="chatbot-header">
         <span>💬 MOLLY Travel Buddy</span>
         <button class="chatbot-close" onclick="toggleMollyChat()">×</button>
@@ -220,7 +247,7 @@
         />
         <button id="sendBtn" onclick="handleSendClick()">Send</button>
       </div>
-    </div>
+    </div> -->
 
     <!-- Chatbot Script -->
     <script src="chatbot.js" defer></script>

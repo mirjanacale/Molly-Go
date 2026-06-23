@@ -431,6 +431,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log(`🎪 Starting events fetch for ${city} (${countryCode})`);
         const events = await fetchEvents(city, countryCode);
         console.log("📊 Events array received:", events);
+        console.log(`🗓️ Rendering ${events.length} events for ${city}`);
 
         // Wait for section to be fully visible before rendering
         const eventsSection = document.getElementById("events-section");
@@ -451,6 +452,9 @@ document.addEventListener("DOMContentLoaded", function () {
               console.log(`✅ Events remain visible: ${isStillVisible}`);
               console.log(
                 `✅ Events section visible after render: ${isStillVisible}`
+              );
+              console.log(
+                `✅ Events loaded successfully: ${events.length} items`
               );
               if (!isStillVisible) {
                 console.warn(
@@ -498,6 +502,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log(`🧭 Starting guide fetch for ${city} (${countryCode})`);
         const guide = await fetchGuide(city, countryCode);
         console.log("📊 Guide object received:", guide);
+        console.log(`🌍 Rendering travel guide for ${city}`);
 
         // Wait for section to be fully visible before rendering
         const guideSection = document.getElementById("guide-section");
@@ -518,6 +523,11 @@ document.addEventListener("DOMContentLoaded", function () {
               console.log(`✅ Guide remain visible: ${isStillVisible}`);
               console.log(
                 `✅ Guide section visible after render: ${isStillVisible}`
+              );
+              console.log(
+                `✅ Guide loaded successfully: ${
+                  guide.blocks?.length || 0
+                } blocks`
               );
               if (!isStillVisible) {
                 console.warn("⚠️ Guide section became hidden after rendering!");
@@ -1428,5 +1438,56 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-// Expose showHeroSection function globally
+// Function to return to hero section with smooth transition
+function returnToHero() {
+  console.log("🏠 Returning to hero section...");
+
+  // Get all content sections
+  const eventsSection = document.getElementById("events-section");
+  const guideSection = document.getElementById("guide-section");
+  const hotelsSection = document.getElementById("hotels-section");
+  const heroSection = document.querySelector(".hero-section");
+
+  // Hide all content sections with exit animation
+  if (eventsSection) {
+    eventsSection.classList.remove("section-enter", "active");
+    eventsSection.classList.add("section-exit");
+    setTimeout(() => eventsSection.classList.add("hidden"), 300);
+  }
+  if (guideSection) {
+    guideSection.classList.remove("section-enter", "active");
+    guideSection.classList.add("section-exit");
+    setTimeout(() => guideSection.classList.add("hidden"), 300);
+  }
+  if (hotelsSection) {
+    hotelsSection.classList.remove("section-enter", "active");
+    hotelsSection.classList.add("section-exit");
+    setTimeout(() => hotelsSection.classList.add("hidden"), 300);
+  }
+
+  // Show hero section with enter animation
+  if (heroSection) {
+    heroSection.classList.remove("hidden", "section-exit");
+    heroSection.classList.add("section-enter", "active");
+    // Trigger hero slide down animation
+    heroSection.style.animation =
+      "heroSlideIn 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) forwards";
+
+    // Smooth scroll to hero section
+    setTimeout(() => {
+      heroSection.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
+  }
+
+  // Console log success
+  setTimeout(() => {
+    console.log("🏠 Returned to hero section successfully.");
+  }, 700);
+}
+
+// Expose functions globally
 window.showHeroSection = showHeroSection;
+window.returnToHero = returnToHero;

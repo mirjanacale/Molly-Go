@@ -1,0 +1,138 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: "Inter", sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Poppins", sans-serif;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ═══ SCROLL REVEAL ═══ */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.scroll-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ═══ HERO TEXT ANIMATIONS ═══ */
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-down {
+  animation: fade-in-down 1s ease both;
+}
+.animate-fade-in-up {
+  animation: fade-in-up 1s ease both;
+}
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+/* ═══ SLOW BOUNCE for scroll indicator ═══ */
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(8px); }
+}
+.animate-bounce-slow {
+  animation: bounce-slow 2s ease-in-out infinite;
+}
+
+/* ═══ CHAT TYPING INDICATOR ═══ */
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% { transform: translate3d(0, 0, 0); }
+  40%, 43%                 { transform: translate3d(0, -8px, 0); }
+  70%                      { transform: translate3d(0, -4px, 0); }
+  90%                      { transform: translate3d(0, -2px, 0); }
+}
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+/* ═══ MARQUEE (kept for potential reuse) ═══ */
+.marquee-container {
+  width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+.marquee-track {
+  display: flex;
+  gap: 1rem;
+  width: max-content;
+  animation: marquee-scroll 40s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+@keyframes marquee-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ═══ SCROLLBAR HIDE (for festival scroll) ═══ */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ═══ BREATHING DRAGON ═══ */
+@keyframes dragonBreathe {
+  0%, 100% { transform: scale(1.0); }
+  50%      { transform: scale(1.05); }
+}
+.dragon-breathe {
+  animation: dragonBreathe 4s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* ═══ AMBER GLOW ON HOVER ═══ */
+.amber-glow {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.amber-glow:hover {
+  box-shadow: 0 0 20px rgba(242, 169, 8, 0.4), 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* ═══ CARD SLIDE IN ═══ */
+.card-slide-in {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.card-slide-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 768px) {
+  .marquee-track {
+    animation-duration: 25s;
+  }
+}

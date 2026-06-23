@@ -553,6 +553,29 @@
   text-decoration: none;
 }
 
+/* Enhanced Book Now button hover animation */
+.book-btn {
+  transition: all 0.3s ease;
+}
+
+.book-btn:hover {
+  background: linear-gradient(135deg, #d99808, #8a3d1a);
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 8px 25px rgba(242, 169, 8, 0.5);
+  filter: brightness(0.95);
+}
+
+.book-btn-disabled {
+  opacity: 0.6;
+  cursor: not-allowed !important;
+}
+
+.book-btn-disabled:hover {
+  transform: none !important;
+  background: #ccc !important;
+  box-shadow: none !important;
+}
+
 .unified-btn-secondary {
   background: transparent;
   color: #a24d23;
@@ -2627,7 +2650,44 @@ button {
     right: 15px;
     padding: 9px 16px;
   }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .back-to-hero-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    align-self: flex-end;
+  }
 }
+
+.back-to-hero-btn {
+  background: linear-gradient(135deg, #f2a908 0%, #a24d23 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(242, 169, 8, 0.3);
+}
+
+.back-to-hero-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(242, 169, 8, 0.4);
+  background: linear-gradient(135deg, #ffb52a 0%, #b85a2a 100%);
+}
+
+.back-to-hero-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(242, 169, 8, 0.3);
+}
+
 /* ========== MOLLY CHATBOT STYLES ========== */
 
 .chatbot-toggle {
